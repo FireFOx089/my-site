@@ -188,16 +188,13 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
 
 // --- 2. CLICK HANDLER ---
 function ClickHandler({ rotationVelocity }) {
-  const { camera, size } = useThree();
-  const lastMousePos = useRef({ x: 0, y: 0 });
+  const { size } = useThree();
   const mouseDownPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleMouseDown = (e) => {
       mouseDownPos.current.x = e.clientX;
       mouseDownPos.current.y = e.clientY;
-      lastMousePos.current.x = e.clientX;
-      lastMousePos.current.y = e.clientY;
     };
 
     const handleMouseUp = (e) => {

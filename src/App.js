@@ -436,7 +436,7 @@ export default function App() {
           
           <EffectComposer>
             <Bloom intensity={0.4} luminanceThreshold={0.9} mipmapBlur />
-            <Vignette darkness={0.7} offset={0.3} />
+            <Vignette darkness={0.4} offset={0.3} />
           </EffectComposer>
         </Canvas>
       </div>

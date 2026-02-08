@@ -1,4 +1,9 @@
 /* ===========================
+   GOOGLE FONTS IMPORT
+   =========================== */
+@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+
+/* ===========================
    GLOBAL STYLES
    =========================== */
 * {
@@ -8,14 +13,25 @@
 }
 
 body {
-  background-color: #000;
+  background: radial-gradient(ellipse at center, #f5f5f5 0%, #d0d0d0 50%, #a0a0a0 100%);
   overflow-x: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: "Bungee", sans-serif;
   cursor: none !important;
 }
 
 body * {
   cursor: none !important;
+}
+
+/* Show default cursor on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  body {
+    cursor: auto !important;
+  }
+  
+  body * {
+    cursor: auto !important;
+  }
 }
 
 /* ===========================
@@ -48,7 +64,7 @@ canvas {
   justify-content: center;
   z-index: 10;
   pointer-events: none;
-  color: white;
+  color: #000000;
   text-align: center;
 }
 
@@ -61,39 +77,36 @@ canvas {
 }
 
 .center-content h1 {
-  font-size: clamp(2.5rem, 10vw, 7rem);
-  font-weight: 200;
-  letter-spacing: 0.15em;
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
   margin-bottom: 1.5rem;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1a1a1a;
   line-height: 1.1;
   position: relative;
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
 }
 
+/* Remove subtitle styles since we're removing it */
 .subtitle {
-  font-size: clamp(0.875rem, 2vw, 1.25rem);
-  letter-spacing: 0.25em;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  font-weight: 300;
-  margin-bottom: 2rem;
+  display: none;
 }
 
-/* Decorative line under text */
+/* Decorative line under text - enhanced with shadow */
 .decorative-line {
-  width: 120px;
-  height: 1px;
+  width: 150px;
+  height: 2px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(255, 255, 255, 0.6) 50%, 
+    rgba(0, 0, 0, 0.3) 20%,
+    rgba(0, 0, 0, 0.7) 50%,
+    rgba(0, 0, 0, 0.3) 80%,
     transparent 100%
   );
-  margin: 0 auto;
-  opacity: 0.6;
+  margin: 2rem auto 0;
+  opacity: 0.8;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 /* ===========================
@@ -114,16 +127,18 @@ canvas {
 
 .scroll-arrow {
   font-size: 2rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 100;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 300;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.2));
 }
 
 .scroll-indicator p {
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 300;
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 400;
+  font-family: "Bungee", sans-serif;
 }
 
 /* ===========================
@@ -131,16 +146,11 @@ canvas {
    =========================== */
 @media (max-width: 768px) {
   .center-content h1 {
-    letter-spacing: 0.1em;
-  }
-  
-  .subtitle {
-    letter-spacing: 0.15em;
-    font-size: 0.75rem;
+    letter-spacing: 0.05em;
   }
   
   .decorative-line {
-    width: 80px;
+    width: 100px;
   }
 }
 
@@ -158,6 +168,15 @@ canvas {
   }
 }
 
+@keyframes glowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.1));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(0, 0, 0, 0.2));
+  }
+}
+
 /* Subtle grain texture overlay */
 body::before {
   content: '';
@@ -169,12 +188,25 @@ body::before {
   background-image: 
     repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.03) 0px,
+      rgba(0, 0, 0, 0.015) 0px,
       transparent 1px,
       transparent 2px,
-      rgba(255, 255, 255, 0.03) 3px
+      rgba(0, 0, 0, 0.015) 3px
     );
   pointer-events: none;
   z-index: 100;
   opacity: 0.3;
+}
+
+/* Enhanced vignette effect - darker edges */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(160, 160, 160, 0.3) 100%);
+  pointer-events: none;
+  z-index: 99;
 }

@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useEffect, useState, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Points, PointMaterial, useGLTF } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -13,18 +13,35 @@ gsap.registerPlugin(ScrollTrigger);
 // 🎛️ GLOBAL CONFIGURATION
 // ===========================
 const MODEL_CONFIG = {
-  scale: 0.6,           // Adjust this to scale the car model globally
+  scale: 0.5,            // Adjust this to scale the car model globally
   rotationX: 0,          // Rotation around X-axis (in radians)
   rotationY: 0,          // Rotation around Y-axis (in radians)
   rotationZ: 0,          // Rotation around Z-axis (in radians)
   autoRotateSpeed: 0.001 // Speed of continuous Y-axis rotation
 };
 
-// --- 1. DYNAMIC PARTICLES (With Fixed Scrolling) ---
-function BackgroundParticles({ setZone, activeZone }) {
+const CURSOR_CONFIG = {
+  outerRingSpeed: 0.05,  // How fast outer ring follows (0.01 = slow, 0.2 = fast)
+  innerDotSpeed: 0.08,   // How fast inner dot follows (should be faster than ring)
+  rotationSpeed: 0.01,   // Speed of outer ring rotation
+  outerRingSize: 0.08,   // Size of outer ring (increased for visibility)
+  innerDotSize: 0.01     // Size of inner dot (increased for visibility)
+};
+
+// ===========================
+// 🆕 ROTATION PHYSICS CONFIG
+// ===========================
+const ROTATION_CONFIG = {
+  friction: 0.98,        // How quickly rotation slows down (0.95 = high friction, 0.99 = low friction)
+  clickForce: 0.05,      // How much force is applied per click
+  maxVelocity: 0.15      // Maximum rotation velocity
+};
+
+// --- 1. DYNAMIC PARTICLES (With Click-Based Rotation) ---
+function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
   const pointsRef = useRef();
   const count = 10000;
-  const scrollProgress = useRef(0); // Changed to direct value instead of object
+  const scrollProgress = useRef(0);
 
   // Load the model to extract its points
   const { scene } = useGLTF('/cartoon_car_v02.glb');
@@ -110,9 +127,9 @@ function BackgroundParticles({ setZone, activeZone }) {
 
     // Update zone based on scroll position with better thresholds
     let newZone = null;
-    if (p < 0.1) {
+    if (p < 0.2) {
       newZone = 'cloud';
-    } else if (p >= 0.1 && p <= 0.55) {
+    } else if (p >= 0.2 && p <= 0.6) {
       newZone = 'model';
     } else {
       newZone = 'cube';
@@ -124,14 +141,17 @@ function BackgroundParticles({ setZone, activeZone }) {
     for (let i = 0; i < count * 3; i++) {
       let targetPos;
       
-      if (p <= 0.5) {
-        // First half: Cloud → Model
-        const localP = THREE.MathUtils.clamp(p * 2, 0, 1);
+      if (p <= 0.33) {
+        // First third: Cloud → Model
+        const localP = THREE.MathUtils.clamp(p * 3, 0, 1);
         targetPos = THREE.MathUtils.lerp(cloud[i], modelShape[i], localP);
-      } else {
-        // Second half: Model → Cube
-        const localP = THREE.MathUtils.clamp((p - 0.5) * 2, 0, 1);
+      } else if (p <= 0.66) {
+        // Middle third: Model → Cube
+        const localP = THREE.MathUtils.clamp((p - 0.33) * 3, 0, 1);
         targetPos = THREE.MathUtils.lerp(modelShape[i], cube[i], localP);
+      } else {
+        // Final third: Stay at Cube
+        targetPos = cube[i];
       }
       
       // Smooth interpolation to target position (helps with reverse scroll)
@@ -139,34 +159,109 @@ function BackgroundParticles({ setZone, activeZone }) {
     }
     
     pointsRef.current.geometry.attributes.position.needsUpdate = true;
-    pointsRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed;
+    
+    // ===========================
+    // 🆕 APPLY ROTATION WITH PHYSICS
+    // ===========================
+    // Constant rotation + momentum-based rotation
+    pointsRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationVelocity.current.y;
+    pointsRef.current.rotation.x += rotationVelocity.current.x;
+    
+    // Apply friction to slow down rotation over time
+    rotationVelocity.current.x *= ROTATION_CONFIG.friction;
+    rotationVelocity.current.y *= ROTATION_CONFIG.friction;
   });
 
   return (
     <Points ref={pointsRef} stride={3} positions={cloud}>
       <PointMaterial 
         transparent 
-        color="#ffffff" 
-        size={0.012} 
+        color="#000000" 
+        size={0.025} 
         sizeAttenuation 
         depthWrite={false} 
-        blending={THREE.AdditiveBlending} 
+        opacity={1.0}
       />
     </Points>
   );
 }
 
-// --- 2. CUSTOM CURSOR ---
+// --- 2. CLICK HANDLER ---
+function ClickHandler({ rotationVelocity }) {
+  const { camera, size } = useThree();
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const mouseDownPos = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseDown = (e) => {
+      mouseDownPos.current.x = e.clientX;
+      mouseDownPos.current.y = e.clientY;
+      lastMousePos.current.x = e.clientX;
+      lastMousePos.current.y = e.clientY;
+    };
+
+    const handleMouseUp = (e) => {
+      // Calculate drag direction and distance
+      const deltaX = e.clientX - mouseDownPos.current.x;
+      const deltaY = e.clientY - mouseDownPos.current.y;
+      
+      // Normalize based on screen size
+      const normalizedDeltaX = deltaX / size.width;
+      const normalizedDeltaY = deltaY / size.height;
+      
+      // Apply force in the direction of the drag
+      // Horizontal drag = Y rotation, Vertical drag = X rotation
+      const forceY = normalizedDeltaX * ROTATION_CONFIG.clickForce;
+      const forceX = normalizedDeltaY * ROTATION_CONFIG.clickForce; // Removed the minus sign
+      
+      // Add force to current velocity
+      rotationVelocity.current.y += forceY;
+      rotationVelocity.current.x += forceX;
+      
+      // Clamp to max velocity
+      rotationVelocity.current.y = THREE.MathUtils.clamp(
+        rotationVelocity.current.y, 
+        -ROTATION_CONFIG.maxVelocity, 
+        ROTATION_CONFIG.maxVelocity
+      );
+      rotationVelocity.current.x = THREE.MathUtils.clamp(
+        rotationVelocity.current.x, 
+        -ROTATION_CONFIG.maxVelocity, 
+        ROTATION_CONFIG.maxVelocity
+      );
+    };
+
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [size, rotationVelocity]);
+
+  return null;
+}
+
+// --- 3. CUSTOM CURSOR ---
 function CustomCursor() {
   const outerRingRef = useRef();
   const innerDotRef = useRef();
   const mouse = useRef({ x: 0, y: 0 });
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
+    // Detect if device supports touch
+    const checkTouch = () => {
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    checkTouch();
+
     const onMouseMove = (e) => {
       mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
+    
     window.addEventListener('mousemove', onMouseMove);
     return () => window.removeEventListener('mousemove', onMouseMove);
   }, []);
@@ -174,56 +269,66 @@ function CustomCursor() {
   useFrame((state) => {
     if (!outerRingRef.current || !innerDotRef.current) return;
     
-    const { width, height } = state.viewport.getCurrentViewport(state.camera, [0, 0, 0]);
-    const targetX = (mouse.current.x * width) / 2;
-    const targetY = (mouse.current.y * height) / 2;
+    // Get viewport dimensions at camera's position
+    const camera = state.camera;
+    const distance = camera.position.z - 4.5; // Distance from camera to cursor plane
+    const vFov = (camera.fov * Math.PI) / 180; // Convert to radians
+    const viewportHeight = 2 * Math.tan(vFov / 2) * distance;
+    const viewportWidth = viewportHeight * camera.aspect;
+    
+    // Calculate target position
+    const targetX = mouse.current.x * (viewportWidth / 2);
+    const targetY = mouse.current.y * (viewportHeight / 2);
     
     // Outer ring - slower, smooth follow
     outerRingRef.current.position.x = THREE.MathUtils.lerp(
       outerRingRef.current.position.x, 
       targetX, 
-      0.1
+      CURSOR_CONFIG.outerRingSpeed
     );
     outerRingRef.current.position.y = THREE.MathUtils.lerp(
       outerRingRef.current.position.y, 
       targetY, 
-      0.1
+      CURSOR_CONFIG.outerRingSpeed
     );
     
     // Inner dot - faster, snappier
     innerDotRef.current.position.x = THREE.MathUtils.lerp(
       innerDotRef.current.position.x, 
       targetX, 
-      0.2
+      CURSOR_CONFIG.innerDotSpeed
     );
     innerDotRef.current.position.y = THREE.MathUtils.lerp(
       innerDotRef.current.position.y, 
       targetY, 
-      0.2
+      CURSOR_CONFIG.innerDotSpeed
     );
     
     // Rotate outer ring
-    outerRingRef.current.rotation.z += 0.02;
+    outerRingRef.current.rotation.z += CURSOR_CONFIG.rotationSpeed;
   });
+
+  // Don't render cursor on touch devices
+  if (isTouchDevice) return null;
 
   return (
     <group>
       {/* Outer Ring */}
       <mesh ref={outerRingRef} position={[0, 0, 4.5]}>
-        <ringGeometry args={[0.1, 0.12, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.6} />
+        <ringGeometry args={[CURSOR_CONFIG.outerRingSize - 0.02, CURSOR_CONFIG.outerRingSize, 32]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.9} />
       </mesh>
       
       {/* Inner Dot */}
       <mesh ref={innerDotRef} position={[0, 0, 4.5]}>
-        <circleGeometry args={[0.02, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
+        <circleGeometry args={[CURSOR_CONFIG.innerDotSize, 32]} />
+        <meshBasicMaterial color="#000000" transparent opacity={1.0} />
       </mesh>
     </group>
   );
 }
 
-// --- 3. SCROLL INDICATOR ---
+// --- 4. SCROLL INDICATOR ---
 function ScrollIndicator() {
   const [visible, setVisible] = useState(true);
 
@@ -254,9 +359,10 @@ function ScrollIndicator() {
   );
 }
 
-// --- 4. MAIN APP ---
+// --- 5. MAIN APP ---
 export default function App() {
   const [activeZone, setActiveZone] = useState('cloud');
+  const rotationVelocity = useRef({ x: 0, y: 0 }); // Shared rotation velocity
 
   return (
     <>
@@ -319,16 +425,21 @@ export default function App() {
       {/* 3D Canvas */}
       <div className="canvas-container">
         <Canvas camera={{ position: [0, 0, 5], fov: 90 }}>
-          <color attach="background" args={['#000000']} />
+          <color attach="background" args={['#ffffff']} />
           
           <Suspense fallback={null}>
-            <BackgroundParticles setZone={setActiveZone} activeZone={activeZone} />
+            <BackgroundParticles 
+              setZone={setActiveZone} 
+              activeZone={activeZone}
+              rotationVelocity={rotationVelocity}
+            />
           </Suspense>
 
+          <ClickHandler rotationVelocity={rotationVelocity} />
           <CustomCursor />
           
           <EffectComposer>
-            <Bloom intensity={1.2} luminanceThreshold={0.1} mipmapBlur />
+            <Bloom intensity={0.4} luminanceThreshold={0.9} mipmapBlur />
             <Vignette darkness={0.7} offset={0.3} />
           </EffectComposer>
         </Canvas>

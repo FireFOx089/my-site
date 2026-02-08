@@ -270,11 +270,10 @@ function CustomCursor() {
     if (!outerRingRef.current || !innerDotRef.current) return;
     
     // Get viewport dimensions at camera's position
-    const camera = state.camera;
-    const distance = camera.position.z - 4.5; // Distance from camera to cursor plane
-    const vFov = (camera.fov * Math.PI) / 180; // Convert to radians
+    const distance = state.camera.position.z - 4.5; // Distance from camera to cursor plane
+    const vFov = (state.camera.fov * Math.PI) / 180; // Convert to radians
     const viewportHeight = 2 * Math.tan(vFov / 2) * distance;
-    const viewportWidth = viewportHeight * camera.aspect;
+    const viewportWidth = viewportHeight * state.camera.aspect;
     
     // Calculate target position
     const targetX = mouse.current.x * (viewportWidth / 2);

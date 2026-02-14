@@ -17,11 +17,69 @@ const MODEL_CONFIG = {
   autoRotateSpeed: 0.001
 };
 
+const CURSOR_CONFIG = {
+  outerRingSpeed: 0.05,
+  innerDotSpeed: 0.08,
+  rotationSpeed: 0.01,
+  outerRingSize: 0.08,
+  innerDotSize: 0.01
+};
+
 const ROTATION_CONFIG = {
   friction: 0.98,
   clickForce: 0.05,
   maxVelocity: 0.15
 };
+
+// --- ZONE COUNTER COMPONENT ---
+function ZoneCounter({ activeZone }) {
+  const zoneIndex = 
+    activeZone === 'cloud' ? '01' : 
+    activeZone === 'model' ? '02' : 
+    activeZone === 'cube' ? '03' : 
+    '04';
+  
+  // Now showing counter on all pages including blank
+  
+  return (
+    <motion.div
+      className="zone-counter"
+      key={zoneIndex}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.5 }}
+    >
+      <span className="zone-number">{zoneIndex}</span>
+      <div className="zone-divider" />
+      <span className="zone-total">04</span>
+    </motion.div>
+  );
+}
+
+// --- SCROLL INDICATOR COMPONENT ---
+function ScrollIndicator({ visible }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          className="scroll-indicator"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <motion.div
+            className="scroll-line"
+            animate={{ y: [0, 12, 0] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+          />
+          <span className="scroll-text">SCROLL</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 // --- 1. DYNAMIC PARTICLES ---
 function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
@@ -95,11 +153,14 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
       let target;
       if (p <= 0) {
         target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 4);
-      } else if (p <= 0.35) {
+      }
+      else if (p <= 0.35) {
         target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.25) * 5);
-      } else if (p <= 0.85) {
+      }
+      else if (p <= 0.85) {
         target = cubeShape[i];
-      } else {
+      }
+      else {
         target = cubeShape[i] + (THREE.MathUtils.clamp((p - 0.85) * 6.67, 0, 1) * 20);
       }
       pos[i] += (target - pos[i]) * 0.1;
@@ -199,12 +260,32 @@ export default function App() {
           </div>
 
           <div className="photo-grid">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="grid-item">
+            {[
+              { id: 1, position: 'center', rotation: 0, zIndex: 5 },
+              { id: 2, position: 'left-1', rotation: -8, zIndex: 4 },
+              { id: 3, position: 'right-1', rotation: 8, zIndex: 4 },
+              { id: 4, position: 'left-2', rotation: -15, zIndex: 3 },
+              { id: 5, position: 'right-2', rotation: 15, zIndex: 3 }
+            ].map((item) => (
+              <motion.div
+                key={item.id}
+                className={`grid-item ${item.position}`}
+                data-rotation={item.rotation}
+                style={{ 
+                  '--rotation': `${item.rotation}deg`,
+                  '--base-z-index': item.zIndex
+                }}
+                initial={{ opacity: 0, y: 40 }}
+                animate={activeZone === 'blank' ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                transition={{ duration: 0.8, delay: 0.3 + item.id * 0.12 }}
+              >
                 <div className="image-wrapper">
-                  <img src={`https://picsum.photos/400/600?random=${i}`} alt={`Gallery Item ${i}`} />
+                  <img src={`https://picsum.photos/400/600?random=${item.id}`} alt={`Gallery Item ${item.id}`} loading="lazy" />
+                  <div className="image-overlay">
+                    <span className="image-number">0{item.id}</span>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
@@ -231,6 +312,12 @@ export default function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Zone Counter - positioned bottom right */}
+      <ZoneCounter activeZone={activeZone} />
+
+      {/* Scroll Indicator - shows only on first zone */}
+      <ScrollIndicator visible={activeZone === 'cloud'} />
 
       <div className="canvas-container">
         <Canvas camera={{ position: [0, 0, 5], fov: 90 }}>

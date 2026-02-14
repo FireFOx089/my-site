@@ -17,14 +17,6 @@ const MODEL_CONFIG = {
   autoRotateSpeed: 0.001
 };
 
-const CURSOR_CONFIG = {
-  outerRingSpeed: 0.05,
-  innerDotSpeed: 0.08,
-  rotationSpeed: 0.01,
-  outerRingSize: 0.08,
-  innerDotSize: 0.01
-};
-
 const ROTATION_CONFIG = {
   friction: 0.98,
   clickForce: 0.05,

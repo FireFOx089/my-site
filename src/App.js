@@ -17,14 +17,6 @@ const MODEL_CONFIG = {
   autoRotateSpeed: 0.001
 };
 
-const CURSOR_CONFIG = {
-  outerRingSpeed: 0.05,
-  innerDotSpeed: 0.08,
-  rotationSpeed: 0.01,
-  outerRingSize: 0.08,
-  innerDotSize: 0.01
-};
-
 const ROTATION_CONFIG = {
   friction: 0.98,
   clickForce: 0.05,
@@ -93,29 +85,21 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
     const pos = pointsRef.current.geometry.attributes.position.array;
     const p = scrollProgress.current;
 
-    // Updated zone thresholds - cube stays longer
     let newZone = 'cloud';
-    if (p > 0.55) newZone = 'blank';      // Final page starts at 85%
-    else if (p > 0.30) newZone = 'cube';   // Cube zone is much longer (45%-85%)
-    else if (p > 0.15) newZone = 'model';  // Model zone
+    if (p > 0.55) newZone = 'blank';
+    else if (p > 0.30) newZone = 'cube';
+    else if (p > 0.15) newZone = 'model';
     if (activeZone !== newZone) setZone(newZone);
 
     for (let i = 0; i < count * 3; i++) {
       let target;
       if (p <= 0) {
-        // 0-25%: Cloud → Car Model
         target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 4);
-      }
-      else if (p <= 0.35) {
-        // 25-45%: Car Model → Cube
+      } else if (p <= 0.35) {
         target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.25) * 5);
-      }
-      else if (p <= 0.85) {
-        // 45-85%: Cube stays stable
+      } else if (p <= 0.85) {
         target = cubeShape[i];
-      }
-      else {
-        // 85-100%: Particles explode outward
+      } else {
         target = cubeShape[i] + (THREE.MathUtils.clamp((p - 0.85) * 6.67, 0, 1) * 20);
       }
       pos[i] += (target - pos[i]) * 0.1;
@@ -177,7 +161,6 @@ function CustomCursor({ activeZone }) {
     inner.current.position.set(THREE.MathUtils.lerp(inner.current.position.x, tX, 0.1), THREE.MathUtils.lerp(inner.current.position.y, tY, 0.1), 4.5);
   });
   
-  // Hide cursor on blank page
   if (activeZone === 'blank') return null;
   
   return (
@@ -203,7 +186,6 @@ export default function App() {
     <>
       <div style={{ height: '400vh', width: '100%' }} />
       
-      {/* Updated Final Page with 5-Photo Grid */}
       <div className={`final-content-page ${activeZone === 'blank' ? 'visible' : ''}`}>
         <motion.div 
           className="final-content-wrapper"

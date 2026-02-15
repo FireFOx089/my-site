@@ -28,10 +28,9 @@ function ZoneCounter({ activeZone }) {
   const zoneIndex = 
     activeZone === 'cloud' ? '01' : 
     activeZone === 'model' ? '02' : 
-    activeZone === 'cube' ? '03' : 
-    '04';
-  
-  // Now showing counter on all pages including blank
+    activeZone === 'cube' ? '03' :
+    activeZone === 'about' ? '04' :
+    '05';
   
   return (
     <motion.div
@@ -44,7 +43,7 @@ function ZoneCounter({ activeZone }) {
     >
       <span className="zone-number">{zoneIndex}</span>
       <div className="zone-divider" />
-      <span className="zone-total">04</span>
+      <span className="zone-total">05</span>
     </motion.div>
   );
 }
@@ -73,6 +72,63 @@ function ScrollIndicator({ visible }) {
   );
 }
 
+// --- ANIMATED HTML CURSOR WITH SMOOTH FOLLOW ---
+function HTMLCursor({ activeZone }) {
+  const cursorOuterRef = useRef();
+  const cursorInnerRef = useRef();
+  const mousePos = useRef({ x: 0, y: 0 });
+  const outerPos = useRef({ x: 0, y: 0 });
+  const innerPos = useRef({ x: 0, y: 0 });
+  const rafId = useRef(null);
+
+  useEffect(() => {
+    const moveCursor = (e) => {
+      mousePos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    window.addEventListener('mousemove', moveCursor);
+
+    // Smooth animation loop
+    const animate = () => {
+      // Inner dot follows mouse instantly (with slight smoothing)
+      innerPos.current.x += (mousePos.current.x - innerPos.current.x) * 0.25;
+      innerPos.current.y += (mousePos.current.y - innerPos.current.y) * 0.25;
+
+      // Outer ring follows inner dot with delay (slower lerp = more delay)
+      outerPos.current.x += (innerPos.current.x - outerPos.current.x) * 0.12;
+      outerPos.current.y += (innerPos.current.y - outerPos.current.y) * 0.12;
+
+      if (cursorInnerRef.current) {
+        cursorInnerRef.current.style.left = `${innerPos.current.x}px`;
+        cursorInnerRef.current.style.top = `${innerPos.current.y}px`;
+      }
+
+      if (cursorOuterRef.current) {
+        cursorOuterRef.current.style.left = `${outerPos.current.x}px`;
+        cursorOuterRef.current.style.top = `${outerPos.current.y}px`;
+      }
+
+      rafId.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('mousemove', moveCursor);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
+
+  //if (activeZone === 'blank') return null;
+
+  return (
+    <>
+      <div ref={cursorOuterRef} className="html-cursor-outer" />
+      <div ref={cursorInnerRef} className="html-cursor-inner" />
+    </>
+  );
+}
+
 // --- 1. DYNAMIC PARTICLES ---
 function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
   const pointsRef = useRef();
@@ -80,10 +136,11 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
   const scrollProgress = useRef(0);
   const { scene } = useGLTF('/cartoon_car_v02.glb');
 
-  const [initialCloud, modelShape, cubeShape] = useMemo(() => {
+  const [initialCloud, modelShape, cubeShape, sphereShape] = useMemo(() => {
     const c = new Float32Array(count * 3);
     const m = new Float32Array(count * 3);
     const cb = new Float32Array(count * 3);
+    const sp = new Float32Array(count * 3);
     const tempPoints = [];
 
     scene.traverse((child) => {
@@ -100,10 +157,13 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
+      
+      // Initial cloud
       c[i3] = (Math.random() - 0.5) * 15;
       c[i3 + 1] = (Math.random() - 0.5) * 10;
       c[i3 + 2] = (Math.random() - 0.5) * 10;
 
+      // Model shape
       if (tempPoints.length > 0) {
         const randomPoint = tempPoints[Math.floor(Math.random() * tempPoints.length)];
         const scaledPoint = randomPoint.clone().multiplyScalar(MODEL_CONFIG.scale);
@@ -112,11 +172,20 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
         m[i3 + 2] = scaledPoint.z;
       }
 
+      // Cube shape
       cb[i3] = (Math.random() - 0.5) * 4;
       cb[i3 + 1] = (Math.random() - 0.5) * 4;
       cb[i3 + 2] = (Math.random() - 0.5) * 4;
+
+      // Sphere shape for About section
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      const radius = 2.5 + Math.random() * 0.5;
+      sp[i3] = radius * Math.sin(phi) * Math.cos(theta);
+      sp[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      sp[i3 + 2] = radius * Math.cos(phi);
     }
-    return [c, m, cb];
+    return [c, m, cb, sp];
   }, [scene, count]);
 
   useEffect(() => {
@@ -136,7 +205,8 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
     const p = scrollProgress.current;
 
     let newZone = 'cloud';
-    if (p > 0.55) newZone = 'blank';
+    if (p > 0.70) newZone = 'blank';
+    else if (p > 0.45) newZone = 'about';
     else if (p > 0.30) newZone = 'cube';
     else if (p > 0.15) newZone = 'model';
     if (activeZone !== newZone) setZone(newZone);
@@ -144,16 +214,24 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
     for (let i = 0; i < count * 3; i++) {
       let target;
       if (p <= 0) {
-        target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 4);
+        // Cloud to Model
+        target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 6.67);
       }
-      else if (p <= 0.35) {
-        target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.25) * 5);
+      else if (p <= 0.30) {
+        // Model to Cube
+        target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.15) * 6.67);
       }
-      else if (p <= 0.85) {
-        target = cubeShape[i];
+      else if (p <= 0.45) {
+        // Cube to Sphere (About)
+        target = THREE.MathUtils.lerp(cubeShape[i], sphereShape[i], (p - 0.30) * 6.67);
+      }
+      else if (p <= 0.70) {
+        // Hold Sphere
+        target = sphereShape[i];
       }
       else {
-        target = cubeShape[i] + (THREE.MathUtils.clamp((p - 0.85) * 6.67, 0, 1) * 20);
+        // Disperse for Gallery
+        target = sphereShape[i] + (THREE.MathUtils.clamp((p - 0.70) * 3.33, 0, 1) * 20);
       }
       pos[i] += (target - pos[i]) * 0.1;
     }
@@ -172,7 +250,7 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
   );
 }
 
-// --- 2. CLICK & CURSOR ---
+// --- 2. CLICK HANDLER ---
 function ClickHandler({ rotationVelocity }) {
   const { size } = useThree();
   const mouseDownPos = useRef({ x: 0, y: 0 });
@@ -188,48 +266,6 @@ function ClickHandler({ rotationVelocity }) {
   return null;
 }
 
-function CustomCursor({ activeZone }) {
-  const outer = useRef(); 
-  const inner = useRef();
-  const mouse = useRef({ x: 0, y: 0 });
-  
-  useEffect(() => {
-    const move = (e) => { 
-      mouse.current.x = (e.clientX/window.innerWidth)*2-1; 
-      mouse.current.y = -(e.clientY/window.innerHeight)*2+1; 
-    };
-    window.addEventListener('mousemove', move); 
-    return () => window.removeEventListener('mousemove', move);
-  }, []);
-  
-  useFrame((state) => {
-    if (!outer.current || !inner.current) return;
-    const dist = state.camera.position.z - 4.5;
-    const vFov = (state.camera.fov * Math.PI) / 180;
-    const viewportHeight = 2 * Math.tan(vFov / 2) * dist;
-    const viewportWidth = viewportHeight * state.camera.aspect;
-    const tX = mouse.current.x * (viewportWidth / 2);
-    const tY = mouse.current.y * (viewportHeight / 2);
-    outer.current.position.set(THREE.MathUtils.lerp(outer.current.position.x, tX, 0.05), THREE.MathUtils.lerp(outer.current.position.y, tY, 0.05), 4.5);
-    inner.current.position.set(THREE.MathUtils.lerp(inner.current.position.x, tX, 0.1), THREE.MathUtils.lerp(inner.current.position.y, tY, 0.1), 4.5);
-  });
-  
-  if (activeZone === 'blank') return null;
-  
-  return (
-    <group>
-      <mesh ref={outer} position={[0, 0, 4.5]}>
-        <ringGeometry args={[0.06, 0.08, 32]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.8} />
-      </mesh>
-      <mesh ref={inner} position={[0, 0, 4.5]}>
-        <circleGeometry args={[0.01, 32]} />
-        <meshBasicMaterial color="#000" />
-      </mesh>
-    </group>
-  );
-}
-
 // --- 3. MAIN APP ---
 export default function App() {
   const [activeZone, setActiveZone] = useState('cloud');
@@ -237,8 +273,56 @@ export default function App() {
 
   return (
     <>
-      <div style={{ height: '400vh', width: '100%' }} />
+      <div style={{ height: '500vh', width: '100%' }} />
       
+      {/* ANIMATED HTML CURSOR - SITS ABOVE EVERYTHING */}
+      <HTMLCursor activeZone={activeZone} />
+
+      {/* ABOUT PAGE */}
+      <div className={`about-page ${activeZone === 'about' ? 'visible' : ''}`}>
+        <motion.div 
+          className="glass-container"
+          initial={{ opacity: 0, scale: 0.95 }} 
+          animate={activeZone === 'about' ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="about-wrapper">
+            <motion.div 
+              className="about-left"
+              initial={{ opacity: 0, x: -50 }}
+              animate={activeZone === 'about' ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <h2 className="about-title">ABOUT</h2>
+              <p className="about-description">
+                We are a creative studio pushing the boundaries of digital experiences. 
+                Our work sits at the intersection of art, technology, and human connection.
+                Every project is crafted with meticulous attention to detail and a passion 
+                for innovation that transforms the ordinary into the extraordinary.
+              </p>
+            </motion.div>
+
+            <div className="about-divider" />
+
+            <motion.div 
+              className="about-right"
+              initial={{ opacity: 0, x: 50 }}
+              animate={activeZone === 'about' ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <div className="about-image-container">
+                <img 
+                  src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=1000&fit=crop" 
+                  alt="About visual" 
+                  className="about-image"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* GALLERY PAGE */}
       <div className={`final-content-page ${activeZone === 'blank' ? 'visible' : ''}`}>
         <motion.div 
           className="final-content-wrapper"
@@ -285,7 +369,7 @@ export default function App() {
 
       <div className="ui-overlay">
         <AnimatePresence mode="wait">
-          {activeZone !== 'blank' && (
+          {activeZone !== 'blank' && activeZone !== 'about' && (
             <motion.div 
               key={activeZone}
               initial={{ opacity: 0 }} 
@@ -318,7 +402,6 @@ export default function App() {
             <BackgroundParticles setZone={setActiveZone} activeZone={activeZone} rotationVelocity={rotationVelocity} />
           </Suspense>
           <ClickHandler rotationVelocity={rotationVelocity} />
-          <CustomCursor activeZone={activeZone} />
           <EffectComposer>
             <Bloom intensity={0.4} luminanceThreshold={0.9} mipmapBlur />
             <Vignette darkness={0.4} offset={0.3} />

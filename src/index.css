@@ -11,6 +11,32 @@ body {
 
 body * { cursor: none !important; }
 
+/* ========== HTML CURSOR (NEW - ABOVE EVERYTHING) ========== */
+.html-cursor-outer {
+  position: fixed;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease-out;
+  opacity: 0.8;
+}
+
+.html-cursor-inner {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: #000;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease-out;
+}
+
 .canvas-container {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -27,7 +53,252 @@ body * { cursor: none !important; }
 .center-content h1 { font-size: clamp(3rem, 10vw, 7rem); text-transform: uppercase; }
 .decorative-line { width: 100px; height: 2px; background: #000; margin: 1rem auto; opacity: 0.5; }
 
-/* FINAL PAGE LAYOUT */
+/* ========== ABOUT PAGE WITH GLASSMORPHISM ========== */
+.about-page {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+.about-page.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* GLASSMORPHISM CONTAINER WITH ELEGANT BORDERS */
+.glass-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 2rem;
+  padding: 4rem 3rem;
+  position: relative;
+  
+  /* GLASSMORPHISM EFFECT */
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(20px);
+  
+  /* MAIN BORDER - Subtle elegant frame */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  
+  /* SIZING */
+  min-height: 500px;
+  max-height: 70vh;
+  
+  /* OUTER GLOW/SHADOW for depth */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  
+  transition: all 0.4s ease;
+}
+
+/* DECORATIVE CORNER ACCENTS */
+.glass-container::before,
+.glass-container::after {
+  content: '';
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Top-left corner */
+.glass-container::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 24px 0 0 0;
+}
+
+/* Bottom-right corner */
+.glass-container::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 24px 0;
+}
+
+/* Hover effect - corners expand */
+.glass-container:hover::before,
+.glass-container:hover::after {
+  width: 80px;
+  height: 80px;
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Inner highlight border */
+.glass-container::before {
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.about-wrapper {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.about-left {
+  padding-right: 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-title {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: #000;
+  line-height: 1;
+}
+
+.about-description {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  line-height: 1.8;
+  color: #000;
+  opacity: 0.8;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  max-width: 600px;
+}
+
+.about-divider {
+  width: 1px;
+  height: 350px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.3) 20%, rgba(0, 0, 0, 0.3) 80%, transparent);
+}
+
+.about-right {
+  padding-left: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-image-container {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 4/5;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+  position: relative;
+  
+  /* Add subtle border to image container too */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.about-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.95;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.about-image-container:hover .about-image {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+/* Responsive About Section */
+@media (max-width: 1024px) {
+  .glass-container {
+    margin: 0 1.5rem;
+    padding: 3rem 2rem;
+    max-height: 80vh;
+  }
+  
+  .glass-container::before,
+  .glass-container::after {
+    width: 50px;
+    height: 50px;
+  }
+
+  .about-wrapper {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .about-left {
+    padding-right: 0;
+    text-align: center;
+    align-items: center;
+  }
+
+  .about-divider {
+    display: none;
+  }
+
+  .about-right {
+    padding-left: 0;
+  }
+
+  .about-description {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .glass-container {
+    margin: 0 1rem;
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+  }
+  
+  .glass-container::before {
+    border-radius: 20px 0 0 0;
+  }
+  
+  .glass-container::after {
+    border-radius: 0 0 20px 0;
+  }
+  
+  .glass-container::before,
+  .glass-container::after {
+    width: 40px;
+    height: 40px;
+  }
+
+  .about-wrapper {
+    gap: 2rem;
+  }
+
+  .about-title {
+    font-size: 2.5rem;
+  }
+
+  .about-description {
+    font-size: 1rem;
+  }
+
+  .about-image-container {
+    max-width: 100%;
+  }
+}
+
+/* ========== GALLERY PAGE STYLES ========== */
 .final-content-page {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -41,11 +312,11 @@ body * { cursor: none !important; }
 .final-content-page.visible { 
   opacity: 1; 
   pointer-events: all;
-  cursor: auto !important; /* Show normal cursor on final page */
+  cursor: auto !important;
 }
 
 .final-content-page.visible * {
-  cursor: auto !important; /* Show normal cursor on all elements on final page */
+  cursor: auto !important;
 }
 
 .final-content-wrapper {
@@ -122,7 +393,6 @@ body * { cursor: none !important; }
   transform: scale(1.1);
 }
 
-/* Add subtle overlay on hover */
 .image-wrapper::after {
   content: '';
   position: absolute;
@@ -136,7 +406,6 @@ body * { cursor: none !important; }
   opacity: 1;
 }
 
-/* Staggered animation entrance */
 .grid-item:nth-child(1) { animation-delay: 0.1s; }
 .grid-item:nth-child(2) { animation-delay: 0.2s; }
 .grid-item:nth-child(3) { animation-delay: 0.3s; }
@@ -185,6 +454,7 @@ body::before {
   z-index: 100;
   opacity: 0.5;
 }
+
 /* Zone Counter - Bottom Right Page Numbering */
 .zone-counter {
   position: fixed;
@@ -196,7 +466,7 @@ body::before {
   font-family: 'Arial', sans-serif;
   font-weight: 300;
   letter-spacing: 0.1em;
-  z-index: 200; /* Increased to stay above final page (z-index: 20) */
+  z-index: 200;
 }
 
 .zone-number {
@@ -219,7 +489,6 @@ body::before {
   opacity: 0.5;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .zone-counter {
     bottom: 1.5rem;
@@ -239,6 +508,7 @@ body::before {
     font-size: 0.9rem;
   }
 }
+
 /* Scroll Indicator - Bottom Center */
 .scroll-indicator {
   position: fixed;
@@ -249,7 +519,7 @@ body::before {
   flex-direction: column;
   align-items: center;
   gap: 0.8rem;
-  z-index: 150; /* Increased from 100 to be above grain overlay */
+  z-index: 150;
 }
 
 .scroll-line {
@@ -268,7 +538,6 @@ body::before {
   font-weight: 400;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .scroll-indicator {
     bottom: 2rem;

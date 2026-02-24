@@ -81,7 +81,12 @@ function HTMLCursor({ activeZone }) {
   const innerPos = useRef({ x: 0, y: 0 });
   const rafId = useRef(null);
 
+  // Don't render custom cursor on touch devices
+  const isTouchDevice = typeof window !== 'undefined' &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
   useEffect(() => {
+    if (isTouchDevice) return;
     const moveCursor = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
     };
@@ -198,7 +203,7 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
 
     for (let i = 0; i < count * 3; i++) {
       let target;
-      if (p <= 0.0) {
+      if (p <= 0) {
         target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 6.67);
       } else if (p <= 0.30) {
         target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.15) * 6.67);
@@ -226,21 +231,40 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
   );
 }
 
-// --- 2. CLICK HANDLER ---
+// --- 2. CLICK / TOUCH HANDLER ---
 function ClickHandler({ rotationVelocity }) {
   const { size } = useThree();
-  const mouseDownPos = useRef({ x: 0, y: 0 });
+  const startPos = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
-    const down = (e) => { mouseDownPos.current = { x: e.clientX, y: e.clientY }; };
-    const up = (e) => {
-      rotationVelocity.current.y += ((e.clientX - mouseDownPos.current.x) / size.width) * ROTATION_CONFIG.clickForce;
-      rotationVelocity.current.x += ((e.clientY - mouseDownPos.current.y) / size.height) * ROTATION_CONFIG.clickForce;
+    // Mouse
+    const onMouseDown = (e) => { startPos.current = { x: e.clientX, y: e.clientY }; };
+    const onMouseUp   = (e) => {
+      rotationVelocity.current.y += ((e.clientX - startPos.current.x) / size.width)  * ROTATION_CONFIG.clickForce;
+      rotationVelocity.current.x += ((e.clientY - startPos.current.y) / size.height) * ROTATION_CONFIG.clickForce;
     };
-    window.addEventListener('mousedown', down);
-    window.addEventListener('mouseup', up);
+
+    // Touch — swipe to spin particles on zones 1-3
+    const onTouchStart = (e) => {
+      const t = e.touches[0];
+      startPos.current = { x: t.clientX, y: t.clientY };
+    };
+    const onTouchEnd = (e) => {
+      const t = e.changedTouches[0];
+      rotationVelocity.current.y += ((t.clientX - startPos.current.x) / size.width)  * ROTATION_CONFIG.clickForce * 2;
+      rotationVelocity.current.x += ((t.clientY - startPos.current.y) / size.height) * ROTATION_CONFIG.clickForce * 2;
+    };
+
+    window.addEventListener('mousedown',  onMouseDown);
+    window.addEventListener('mouseup',    onMouseUp);
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
     return () => {
-      window.removeEventListener('mousedown', down);
-      window.removeEventListener('mouseup', up);
+      window.removeEventListener('mousedown',  onMouseDown);
+      window.removeEventListener('mouseup',    onMouseUp);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend',   onTouchEnd);
     };
   }, [size, rotationVelocity]);
   return null;
@@ -263,6 +287,9 @@ function FluidRevealImage({ baseImage, revealImage }) {
     const el = containerRef.current;
     if (!el) return;
 
+    const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+    // Mouse events (desktop)
     const onMove = (e) => {
       const rect = el.getBoundingClientRect();
       mouse.current.x = e.clientX - rect.left;
@@ -271,9 +298,28 @@ function FluidRevealImage({ baseImage, revealImage }) {
     const onEnter = () => { isHovered.current = true; };
     const onLeave = () => { isHovered.current = false; };
 
-    el.addEventListener('mousemove', onMove);
-    el.addEventListener('mouseenter', onEnter);
-    el.addEventListener('mouseleave', onLeave);
+    // Touch events (mobile) — single finger drag reveals the blob
+    const onTouchMove = (e) => {
+      e.preventDefault(); // stop page scroll while touching image
+      const rect = el.getBoundingClientRect();
+      const touch = e.touches[0];
+      mouse.current.x = touch.clientX - rect.left;
+      mouse.current.y = touch.clientY - rect.top;
+      isHovered.current = true;
+    };
+    const onTouchEnd = () => {
+      isHovered.current = false;
+    };
+
+    if (isTouch) {
+      el.addEventListener('touchmove',  onTouchMove, { passive: false });
+      el.addEventListener('touchstart', onTouchMove, { passive: false });
+      el.addEventListener('touchend',   onTouchEnd);
+    } else {
+      el.addEventListener('mousemove',  onMove);
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    }
 
     const R = 42; // blob radius in px
 
@@ -303,9 +349,15 @@ function FluidRevealImage({ baseImage, revealImage }) {
     animate();
 
     return () => {
-      el.removeEventListener('mousemove', onMove);
-      el.removeEventListener('mouseenter', onEnter);
-      el.removeEventListener('mouseleave', onLeave);
+      if (isTouch) {
+        el.removeEventListener('touchmove',  onTouchMove);
+        el.removeEventListener('touchstart', onTouchMove);
+        el.removeEventListener('touchend',   onTouchEnd);
+      } else {
+        el.removeEventListener('mousemove',  onMove);
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
+      }
       cancelAnimationFrame(rafRef.current);
     };
   }, []);

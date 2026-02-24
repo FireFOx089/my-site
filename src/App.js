@@ -85,16 +85,11 @@ function HTMLCursor({ activeZone }) {
     const moveCursor = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
     };
-
     window.addEventListener('mousemove', moveCursor);
 
-    // Smooth animation loop
     const animate = () => {
-      // Inner dot follows mouse instantly (with slight smoothing)
       innerPos.current.x += (mousePos.current.x - innerPos.current.x) * 0.25;
       innerPos.current.y += (mousePos.current.y - innerPos.current.y) * 0.25;
-
-      // Outer ring follows inner dot with delay (slower lerp = more delay)
       outerPos.current.x += (innerPos.current.x - outerPos.current.x) * 0.12;
       outerPos.current.y += (innerPos.current.y - outerPos.current.y) * 0.12;
 
@@ -102,15 +97,12 @@ function HTMLCursor({ activeZone }) {
         cursorInnerRef.current.style.left = `${innerPos.current.x}px`;
         cursorInnerRef.current.style.top = `${innerPos.current.y}px`;
       }
-
       if (cursorOuterRef.current) {
         cursorOuterRef.current.style.left = `${outerPos.current.x}px`;
         cursorOuterRef.current.style.top = `${outerPos.current.y}px`;
       }
-
       rafId.current = requestAnimationFrame(animate);
     };
-
     animate();
 
     return () => {
@@ -118,8 +110,6 @@ function HTMLCursor({ activeZone }) {
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
   }, []);
-
-  //if (activeZone === 'blank') return null;
 
   return (
     <>
@@ -157,13 +147,10 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-      
-      // Initial cloud
       c[i3] = (Math.random() - 0.5) * 15;
       c[i3 + 1] = (Math.random() - 0.5) * 10;
       c[i3 + 2] = (Math.random() - 0.5) * 10;
 
-      // Model shape
       if (tempPoints.length > 0) {
         const randomPoint = tempPoints[Math.floor(Math.random() * tempPoints.length)];
         const scaledPoint = randomPoint.clone().multiplyScalar(MODEL_CONFIG.scale);
@@ -172,12 +159,10 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
         m[i3 + 2] = scaledPoint.z;
       }
 
-      // Cube shape
       cb[i3] = (Math.random() - 0.5) * 4;
       cb[i3 + 1] = (Math.random() - 0.5) * 4;
       cb[i3 + 2] = (Math.random() - 0.5) * 4;
 
-      // Sphere shape for About section
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos((Math.random() * 2) - 1);
       const radius = 2.5 + Math.random() * 0.5;
@@ -207,35 +192,26 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
     let newZone = 'cloud';
     if (p > 0.70) newZone = 'blank';
     else if (p > 0.45) newZone = 'about';
-    else if (p > 0.30) newZone = 'cube';
-    else if (p > 0.15) newZone = 'model';
+    else if (p > 0.20) newZone = 'cube';
+    else if (p > 0.1) newZone = 'model';
     if (activeZone !== newZone) setZone(newZone);
 
     for (let i = 0; i < count * 3; i++) {
       let target;
-      if (p <= 0) {
-        // Cloud to Model
+      if (p <= 0.0) {
         target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 6.67);
-      }
-      else if (p <= 0.30) {
-        // Model to Cube
+      } else if (p <= 0.30) {
         target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.15) * 6.67);
-      }
-      else if (p <= 0.45) {
-        // Cube to Sphere (About)
+      } else if (p <= 0.45) {
         target = THREE.MathUtils.lerp(cubeShape[i], sphereShape[i], (p - 0.30) * 6.67);
-      }
-      else if (p <= 0.70) {
-        // Hold Sphere
+      } else if (p <= 0.70) {
         target = sphereShape[i];
-      }
-      else {
-        // Disperse for Gallery
+      } else {
         target = sphereShape[i] + (THREE.MathUtils.clamp((p - 0.70) * 3.33, 0, 1) * 20);
       }
       pos[i] += (target - pos[i]) * 0.1;
     }
-    
+
     pointsRef.current.geometry.attributes.position.needsUpdate = true;
     pointsRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationVelocity.current.y;
     pointsRef.current.rotation.x += rotationVelocity.current.x;
@@ -260,10 +236,191 @@ function ClickHandler({ rotationVelocity }) {
       rotationVelocity.current.y += ((e.clientX - mouseDownPos.current.x) / size.width) * ROTATION_CONFIG.clickForce;
       rotationVelocity.current.x += ((e.clientY - mouseDownPos.current.y) / size.height) * ROTATION_CONFIG.clickForce;
     };
-    window.addEventListener('mousedown', down); window.addEventListener('mouseup', up);
-    return () => { window.removeEventListener('mousedown', down); window.removeEventListener('mouseup', up); };
+    window.addEventListener('mousedown', down);
+    window.addEventListener('mouseup', up);
+    return () => {
+      window.removeEventListener('mousedown', down);
+      window.removeEventListener('mouseup', up);
+    };
   }, [size, rotationVelocity]);
   return null;
+}
+
+// --- FLUID BLOB REVEAL IMAGE ---
+// baseImage  = your photo WITHOUT the helmet (shown by default)
+// revealImage = your photo WITH the helmet (revealed on hover under the blob mask)
+function FluidRevealImage({ baseImage, revealImage }) {
+  const containerRef = useRef();
+  const blobRef      = useRef();
+  const mouse        = useRef({ x: 0, y: 0 });   // raw cursor pos inside container
+  const blob         = useRef({ x: 0, y: 0 });   // lagging blob centre
+  const vel          = useRef({ x: 0, y: 0 });   // blob velocity (px/frame)
+  const rafRef       = useRef();
+  const isHovered    = useRef(false);
+  const blobOpacity  = useRef(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      mouse.current.x = e.clientX - rect.left;
+      mouse.current.y = e.clientY - rect.top;
+    };
+    const onEnter = () => { isHovered.current = true; };
+    const onLeave = () => { isHovered.current = false; };
+
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseenter', onEnter);
+    el.addEventListener('mouseleave', onLeave);
+
+    const R = 42; // blob radius in px
+
+    const animate = () => {
+      // Spring-lerp blob toward cursor
+      blob.current.x += (mouse.current.x - blob.current.x) * 0.08;
+      blob.current.y += (mouse.current.y - blob.current.y) * 0.08;
+
+      // Opacity fade
+      const targetOpacity = isHovered.current ? 1 : 0;
+      blobOpacity.current += (targetOpacity - blobOpacity.current) * 0.06;
+
+      if (blobRef.current) {
+        const b  = blobRef.current;
+        const x  = blob.current.x;
+        const y  = blob.current.y;
+
+        b.style.opacity        = blobOpacity.current;
+        b.style.transform      = 'none';
+        b.style.clipPath       = `circle(${R}px at ${x}px ${y}px)`;
+        b.style.webkitClipPath = `circle(${R}px at ${x}px ${y}px)`;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('mouseenter', onEnter);
+      el.removeEventListener('mouseleave', onLeave);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="about-image-container fluid-reveal-container">
+
+      {/* LAYER 1 — Base image (no helmet), always visible */}
+      <img
+        src={baseImage}
+        alt="Portrait"
+        className="about-image fluid-base"
+      />
+
+      {/* LAYER 2 — Reveal image (with helmet), clipped by the blob mask */}
+      <img
+        ref={blobRef}
+        src={revealImage}
+        alt="Portrait with helmet"
+        className="about-image fluid-reveal"
+      />
+
+      {/* Gradient overlay on top of both layers */}
+      <div className="image-gradient-overlay" />
+    </div>
+  );
+}
+
+// --- WAVE DOT GRID CANVAS (About Zone BG) ---
+function WaveDotGrid({ visible }) {
+  const canvasRef = useRef();
+  const rafRef = useRef();
+  const activeRef = useRef(visible);
+
+  useEffect(() => { activeRef.current = visible; }, [visible]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const SPACING = 28;   // grid spacing in px
+    const AMPLITUDE = 10; // max wave displacement
+    const FREQ = 0.045;   // spatial frequency
+    const SPEED = 0.022;  // animation speed
+    const DOT_R = 1.4;    // base dot radius
+
+    let W, H, cols, rows, t = 0;
+    let opacity = 0;      // fade tracker
+
+    const resize = () => {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cols = Math.ceil(W / SPACING) + 2;
+      rows = Math.ceil(H / SPACING) + 2;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const draw = () => {
+      // Smoothly fade in/out based on visible prop
+      const target = activeRef.current ? 1 : 0;
+      opacity += (target - opacity) * 0.04;
+
+      ctx.clearRect(0, 0, W, H);
+
+      if (opacity < 0.01) { rafRef.current = requestAnimationFrame(draw); return; }
+
+      t += SPEED;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const baseX = c * SPACING;
+          const baseY = r * SPACING;
+
+          // Two overlapping sine waves for organic feel
+          const wave1 = Math.sin(baseX * FREQ + t) * AMPLITUDE;
+          const wave2 = Math.cos(baseY * FREQ * 0.8 + t * 0.7) * AMPLITUDE * 0.6;
+          const diag  = Math.sin((baseX + baseY) * FREQ * 0.5 + t * 1.2) * AMPLITUDE * 0.4;
+
+          const x = baseX + wave1 + diag;
+          const y = baseY + wave2 + diag;
+
+          // Dot size pulses subtly with wave phase
+          const phase = Math.sin(baseX * FREQ * 1.5 + baseY * FREQ + t * 1.1);
+          const r2 = DOT_R * (0.6 + 0.4 * ((phase + 1) / 2));
+
+          // Opacity varies across the grid for depth
+          const dotOpacity = 0.18 + 0.22 * ((Math.sin(baseX * FREQ * 0.7 + t * 0.5) + 1) / 2);
+
+          ctx.beginPath();
+          ctx.arc(x, y, r2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 0, 0, ${dotOpacity * opacity})`;
+          ctx.fill();
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="wave-dot-canvas"
+      aria-hidden="true"
+    />
+  );
 }
 
 // --- 3. MAIN APP ---
@@ -274,59 +431,127 @@ export default function App() {
   return (
     <>
       <div style={{ height: '500vh', width: '100%' }} />
-      
-      {/* ANIMATED HTML CURSOR - SITS ABOVE EVERYTHING */}
+
       <HTMLCursor activeZone={activeZone} />
 
       {/* ABOUT PAGE */}
       <div className={`about-page ${activeZone === 'about' ? 'visible' : ''}`}>
-        <motion.div 
+
+        {/* Wave-distorted dot grid — fades in/out with the About zone */}
+        <WaveDotGrid visible={activeZone === 'about'} />
+
+        <motion.div
           className="glass-container"
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={activeZone === 'about' ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="about-wrapper">
-            <motion.div 
+
+            {/* LEFT — refined typography layout */}
+            <motion.div
               className="about-left"
-              initial={{ opacity: 0, x: -50 }}
-              animate={activeZone === 'about' ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
+              initial={{ opacity: 0 }}
+              animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 1, delay: 0.35 }}
             >
-              <h2 className="about-title">ABOUT</h2>
-              <p className="about-description">
-                We are a creative studio pushing the boundaries of digital experiences. 
-                Our work sits at the intersection of art, technology, and human connection.
-                Every project is crafted with meticulous attention to detail and a passion 
-                for innovation that transforms the ordinary into the extraordinary.
-              </p>
+              {/* Eyebrow label */}
+              <div className="about-eyebrow">
+                <span className="eyebrow-line" />
+                <span className="eyebrow-text">Est. 2024</span>
+              </div>
+
+              {/* Main title — split for luxury stagger */}
+              <div className="about-title-block">
+                <motion.span
+                  className="about-title-line"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                  transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  We craft
+                </motion.span>
+                <motion.span
+                  className="about-title-line about-title-italic"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                  transition={{ duration: 0.9, delay: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  experiences.
+                </motion.span>
+              </div>
+
+              {/* Body copy */}
+              <motion.p
+                className="about-description"
+                initial={{ opacity: 0, y: 12 }}
+                animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                transition={{ duration: 0.9, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              >
+                A creative studio at the intersection of art, technology, and human
+                connection — transforming the ordinary into the extraordinary through
+                meticulous craft and a relentless pursuit of beauty.
+              </motion.p>
+
+              {/* Stats row */}
+              <motion.div
+                className="about-stats"
+                initial={{ opacity: 0 }}
+                animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 0.9, delay: 1.0 }}
+              >
+                <div className="stat-item">
+                  <span className="stat-number">120+</span>
+                  <span className="stat-label">Projects</span>
+                </div>
+                <div className="stat-divider" />
+                <div className="stat-item">
+                  <span className="stat-number">40+</span>
+                  <span className="stat-label">Clients</span>
+                </div>
+                <div className="stat-divider" />
+                <div className="stat-item">
+                  <span className="stat-number">8</span>
+                  <span className="stat-label">Awards</span>
+                </div>
+              </motion.div>
             </motion.div>
 
             <div className="about-divider" />
 
-            <motion.div 
+            {/* RIGHT — luxury image treatment */}
+            <motion.div
               className="about-right"
-              initial={{ opacity: 0, x: 50 }}
-              animate={activeZone === 'about' ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              initial={{ opacity: 0 }}
+              animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 1.1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="about-image-container">
-                <img 
-                  src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=1000&fit=crop" 
-                  alt="About visual" 
-                  className="about-image"
+              <div className="about-image-frame">
+                {/* Offset decorative border */}
+                <div className="image-border-offset" />
+
+                {/* Fluid blob reveal — base image + helmet image revealed on hover */}
+                <FluidRevealImage
+                  baseImage="/WITHOUT.png"
+                  revealImage="/WITH.png"
                 />
+
+                {/* Floating caption tag */}
+                <div className="image-caption-tag">
+                  <span>Studio / 2024</span>
+                </div>
               </div>
             </motion.div>
+
           </div>
         </motion.div>
       </div>
 
       {/* GALLERY PAGE */}
       <div className={`final-content-page ${activeZone === 'blank' ? 'visible' : ''}`}>
-        <motion.div 
+        <motion.div
           className="final-content-wrapper"
-          initial={{ opacity: 0, y: 50 }} 
+          initial={{ opacity: 0, y: 50 }}
           animate={activeZone === 'blank' ? { opacity: 1, y: 0 } : { opacity: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
         >
@@ -346,8 +571,7 @@ export default function App() {
               <motion.div
                 key={item.id}
                 className={`grid-item ${item.position}`}
-                data-rotation={item.rotation}
-                style={{ 
+                style={{
                   '--rotation': `${item.rotation}deg`,
                   '--base-z-index': item.zIndex
                 }}
@@ -370,17 +594,17 @@ export default function App() {
       <div className="ui-overlay">
         <AnimatePresence mode="wait">
           {activeZone !== 'blank' && activeZone !== 'about' && (
-            <motion.div 
+            <motion.div
               key={activeZone}
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
               className="center-content"
             >
               <h1>
-                {activeZone === 'cloud' ? 'The Nebula' : 
-                 activeZone === 'model' ? 'The Blueprint' : 
+                {activeZone === 'cloud' ? 'The Nebula' :
+                 activeZone === 'model' ? 'The Blueprint' :
                  'The Structure'}
               </h1>
               <div className="decorative-line" />
@@ -389,10 +613,7 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* Zone Counter - positioned bottom right */}
       <ZoneCounter activeZone={activeZone} />
-
-      {/* Scroll Indicator - shows only on first zone */}
       <ScrollIndicator visible={activeZone === 'cloud'} />
 
       <div className="canvas-container">

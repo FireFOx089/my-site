@@ -114,7 +114,8 @@ function HTMLCursor({ activeZone }) {
       window.removeEventListener('mousemove', moveCursor);
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTouchDevice]);
 
   return (
     <>
@@ -203,7 +204,7 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity }) {
 
     for (let i = 0; i < count * 3; i++) {
       let target;
-      if (p <= 0) {
+      if (p <= 0.15) {
         target = THREE.MathUtils.lerp(initialCloud[i], modelShape[i], p * 6.67);
       } else if (p <= 0.30) {
         target = THREE.MathUtils.lerp(modelShape[i], cubeShape[i], (p - 0.15) * 6.67);
@@ -278,7 +279,6 @@ function FluidRevealImage({ baseImage, revealImage }) {
   const blobRef      = useRef();
   const mouse        = useRef({ x: 0, y: 0 });   // raw cursor pos inside container
   const blob         = useRef({ x: 0, y: 0 });   // lagging blob centre
-  const vel          = useRef({ x: 0, y: 0 });   // blob velocity (px/frame)
   const rafRef       = useRef();
   const isHovered    = useRef(false);
   const blobOpacity  = useRef(0);

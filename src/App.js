@@ -25,6 +25,12 @@ const ROTATION_CONFIG = {
   maxVelocity: 0.15,
 };
 
+const AMBIENT_INTENSITY = 0.05;
+
+const isMobile = typeof window !== 'undefined' &&
+  window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+const PARTICLE_COUNT = isMobile ? 3000 : 5000;
+
 const ZONES = [
   { id: 'cube',   index: '01', label: 'WELCOME',      title: 'WELCOME TO' },
   { id: 'model',  index: '02', label: 'INTRODUCTION', title: null         },
@@ -36,14 +42,237 @@ const ZONES = [
 const ZONE_TOTAL = ZONES.length;
 
 // ─────────────────────────────────────────────────────────────
+//  SYSTEM01 — Magnetic Particle Logo
+//  Particles are always formed in logo shape.
+//  Mouse hover repels them. Click explodes them outward.
+//  They snap back to logo formation.
+// ─────────────────────────────────────────────────────────────
+const CONFIG_S01 = {
+  particleCount: isMobile ? 3000 : 5000,
+  particleSize:  2,
+  logoSample:    4,
+  restoreSpeed:  0.06,
+  friction:      0.88,
+  mouseRadius:   90,
+  mouseForce:    18,
+  clickForce:    60,
+  color:         '#0a0a0a',
+};
+
+function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const offscreen = document.createElement('canvas');
+      offscreen.width  = targetW;
+      offscreen.height = targetH;
+      const ctx = offscreen.getContext('2d');
+      const scale = Math.min(targetW / img.width, targetH / img.height) * 0.7;
+      const w = img.width  * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (targetW - w) / 2, (targetH - h) / 2, w, h);
+      const data   = ctx.getImageData(0, 0, targetW, targetH).data;
+      const points = [];
+      for (let py = 0; py < targetH; py += sampleStep) {
+        for (let px = 0; px < targetW; px += sampleStep) {
+          const idx        = (py * targetW + px) * 4;
+          const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+          if (data[idx + 3] > 128 && brightness < 160) points.push({ x: px, y: py });
+        }
+      }
+      resolve(points);
+    };
+    img.onerror = () => resolve([]);
+    img.src = imgSrc;
+  });
+}
+
+function LogoParticles({ visible }) {
+  const canvasRef = useRef();
+  const stateRef  = useRef({
+    particles: [], targets: [],
+    mouse: { x: -9999, y: -9999 },
+    isReady: false, raf: null,
+    opacity: 0, _visible: false,
+  });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const s   = stateRef.current;
+
+    const resize = async () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const pts = await sampleLogo('/logo.png', canvas.width, canvas.height, CONFIG_S01.logoSample);
+      if (!pts.length) return;
+      const count    = Math.min(CONFIG_S01.particleCount, pts.length);
+      const shuffled = pts.sort(() => Math.random() - 0.5).slice(0, count);
+      s.targets      = shuffled;
+      if (!s.particles.length) {
+        s.particles = Array.from({ length: count }, (_, i) => ({
+          x:    Math.random() * canvas.width,
+          y:    Math.random() * canvas.height,
+          vx:   (Math.random() - 0.5) * 4,
+          vy:   (Math.random() - 0.5) * 4,
+          tx:   shuffled[i].x,
+          ty:   shuffled[i].y,
+          size: CONFIG_S01.particleSize * (0.5 + Math.random() * 0.8),
+          alpha: 0.4 + Math.random() * 0.6,
+        }));
+      } else {
+        s.particles.forEach((p, i) => {
+          if (i < shuffled.length) { p.tx = shuffled[i].x; p.ty = shuffled[i].y; }
+        });
+        s.particles = s.particles.slice(0, count);
+      }
+      s.isReady = true;
+    };
+
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    const draw = () => {
+      s.raf = requestAnimationFrame(draw);
+      s.opacity += ((s._visible ? 1 : 0) - s.opacity) * 0.05;
+      if (!s.isReady || s.opacity < 0.01) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const mx  = s.mouse.x, my = s.mouse.y;
+      const mr2 = CONFIG_S01.mouseRadius * CONFIG_S01.mouseRadius;
+
+      for (let i = 0; i < s.particles.length; i++) {
+        const p = s.particles[i];
+
+        // Restore toward target
+        p.vx += (p.tx - p.x) * CONFIG_S01.restoreSpeed;
+        p.vy += (p.ty - p.y) * CONFIG_S01.restoreSpeed;
+
+        // Mouse repulsion
+        const mdx = p.x - mx, mdy = p.y - my;
+        const md2 = mdx * mdx + mdy * mdy;
+        if (md2 < mr2 && md2 > 0) {
+          const dist  = Math.sqrt(md2);
+          const force = (CONFIG_S01.mouseRadius - dist) / CONFIG_S01.mouseRadius;
+          const angle = Math.atan2(mdy, mdx);
+          p.vx += Math.cos(angle) * force * CONFIG_S01.mouseForce;
+          p.vy += Math.sin(angle) * force * CONFIG_S01.mouseForce;
+        }
+
+        p.vx *= CONFIG_S01.friction;
+        p.vy *= CONFIG_S01.friction;
+        p.x  += p.vx;
+        p.y  += p.vy;
+
+        ctx.globalAlpha = p.alpha * s.opacity;
+        ctx.fillStyle   = CONFIG_S01.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    draw();
+    return () => { cancelAnimationFrame(s.raf); ro.disconnect(); };
+  }, []);
+
+  useEffect(() => {
+    stateRef.current._visible = visible;
+  }, [visible]);
+
+  const onMouseMove = useCallback((e) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    stateRef.current.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }, []);
+
+  const onMouseLeave = useCallback(() => {
+    stateRef.current.mouse = { x: -9999, y: -9999 };
+  }, []);
+
+  const onClick = useCallback((e) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    stateRef.current.particles.forEach((p) => {
+      const dx = p.x - cx, dy = p.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      p.vx += (dx / dist) * (CONFIG_S01.clickForce / dist);
+      p.vy += (dy / dist) * (CONFIG_S01.clickForce / dist);
+    });
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    e.preventDefault();
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const t = e.touches[0];
+    stateRef.current.mouse = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    stateRef.current.mouse = { x: -9999, y: -9999 };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'fixed', inset: 0,
+        width: '100%', height: '100%',
+        zIndex: 5,
+        pointerEvents: visible ? 'all' : 'none',
+      }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      onClick={onClick}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SITE LOGO — fixed top-left, swaps color on page 5
+// ─────────────────────────────────────────────────────────────
+function SiteLogo({ isLight }) {
+  return (
+    <img
+      src={isLight ? '/logowhite.png' : '/logo.png'}
+      alt="Studio Logo"
+      style={{
+        position: 'fixed',
+        top: '1.4rem',
+        left: '1.6rem',
+        height: '30px',
+        width: 'auto',
+        zIndex: 200,
+        pointerEvents: 'none',
+        display: 'block',
+      }}
+    />
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────
 //  LOADING SCREEN
 // ─────────────────────────────────────────────────────────────
-function LoadingScreen({ progress }) {
+function LoadingScreen({ progress, isReady }) {
   return (
     <motion.div
       className="loading-screen"
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] } }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 1.0, ease: [0.76, 0, 0.24, 1] } }}
+      style={{ pointerEvents: isReady ? 'none' : 'all' }}
     >
       <div className="loading-content">
         <div className="loading-logo">
@@ -54,10 +283,12 @@ function LoadingScreen({ progress }) {
           <motion.div
             className="loading-bar-fill"
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           />
         </div>
-        <div className="loading-percentage">{Math.round(progress)}%</div>
+        <div className="loading-percentage">
+          {progress < 100 ? `${Math.round(progress)}%` : 'READY'}
+        </div>
       </div>
     </motion.div>
   );
@@ -109,7 +340,6 @@ function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
       {ZONES.map((zone, i) => {
         const isHovered   = hoveredIndex === i;
         const isNeighbour = hoveredIndex !== null && Math.abs(hoveredIndex - i) === 1;
-
         return (
           <motion.button
             key={zone.id}
@@ -201,14 +431,13 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
     document.addEventListener('mouseleave', onLeave);
     document.addEventListener('mouseenter', onEnter);
 
-    const animate = () => {
+    const tick = () => {
       innerPos.current.x += (mousePos.current.x - innerPos.current.x) * 0.3;
       innerPos.current.y += (mousePos.current.y - innerPos.current.y) * 0.3;
       outerPos.current.x += (innerPos.current.x - outerPos.current.x) * 0.1;
       outerPos.current.y += (innerPos.current.y - outerPos.current.y) * 0.1;
 
       const o = isVisible.current ? 1 : 0;
-
       if (cursorInnerRef.current) {
         cursorInnerRef.current.style.left    = `${innerPos.current.x}px`;
         cursorInnerRef.current.style.top     = `${innerPos.current.y}px`;
@@ -223,10 +452,9 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
         labelRef.current.style.left = `${outerPos.current.x + 28}px`;
         labelRef.current.style.top  = `${outerPos.current.y}px`;
       }
-
-      rafId.current = requestAnimationFrame(animate);
+      rafId.current = requestAnimationFrame(tick);
     };
-    animate();
+    tick();
 
     return () => {
       window.removeEventListener('mousemove', onMove);
@@ -240,25 +468,11 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
 
   return (
     <>
-      <div
-        ref={cursorOuterRef}
-        className="html-cursor-outer"
-        style={{ borderColor, width: 42, height: 42, borderRadius: '50%' }}
-      />
-      <div
-        ref={cursorInnerRef}
-        className="html-cursor-inner"
-        style={{ background: color }}
-      />
-      <div
-        ref={labelRef}
-        style={{
-          position: 'fixed',
-          transform: 'translateY(-50%)',
-          zIndex: 10000,
-          pointerEvents: 'none',
-        }}
-      >
+      <div ref={cursorOuterRef} className="html-cursor-outer"
+        style={{ borderColor, width: 42, height: 42, borderRadius: '50%' }} />
+      <div ref={cursorInnerRef} className="html-cursor-inner"
+        style={{ background: color }} />
+      <div ref={labelRef} style={{ position: 'fixed', transform: 'translateY(-50%)', zIndex: 10000, pointerEvents: 'none' }}>
         <AnimatePresence mode="wait">
           {hoveredDotLabel && (
             <motion.span
@@ -270,12 +484,9 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
               style={{
                 color,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-                fontSize: '0.58rem',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                fontWeight: 400,
-                whiteSpace: 'nowrap',
-                display: 'block',
+                fontSize: '0.58rem', letterSpacing: '0.22em',
+                textTransform: 'uppercase', fontWeight: 400,
+                whiteSpace: 'nowrap', display: 'block',
               }}
             >
               {hoveredDotLabel}
@@ -288,19 +499,70 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  WIREFRAME MODEL — kept for rotation sync, invisible when LogoParticles shown
+// ─────────────────────────────────────────────────────────────
+function WireframeModel({ visible, rotationRef }) {
+  const { scene } = useGLTF('/logo2.glb');
+  const groupRef   = useRef();
+  const opacityRef = useRef(0);
+
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((child) => {
+      if (child.isMesh) {
+        child.material = new THREE.MeshBasicMaterial({
+          color: 0xffffff, transparent: true, opacity: 0, depthWrite: false,
+        });
+        child.scale.setScalar(MODEL_CONFIG.scale);
+
+        const edges     = new THREE.EdgesGeometry(child.geometry, 15);
+        const lineMat   = new THREE.LineBasicMaterial({
+          color: 0x0a0a0a, transparent: true, opacity: 0, linewidth: 1,
+        });
+        const wireframe = new THREE.LineSegments(edges, lineMat);
+        wireframe.scale.setScalar(MODEL_CONFIG.scale);
+        wireframe.userData.isWireframe = true;
+        child.add(wireframe);
+      }
+    });
+    return clone;
+  }, [scene]);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const target = visible ? 1 : 0;
+    opacityRef.current += (target - opacityRef.current) * 0.05;
+
+    groupRef.current.traverse((child) => {
+      if (child.isMesh && child.material) child.material.opacity = 0;
+      if (child.isLineSegments && child.userData.isWireframe && child.material) {
+        child.material.opacity = opacityRef.current;
+      }
+    });
+
+    if (rotationRef?.current) {
+      groupRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationRef.current.y;
+      groupRef.current.rotation.x += rotationRef.current.x;
+    }
+  });
+
+  return <primitive ref={groupRef} object={clonedScene} />;
+}
+
+// ─────────────────────────────────────────────────────────────
 //  PARTICLES
 // ─────────────────────────────────────────────────────────────
-function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleColor }) {
-  const pointsRef      = useRef();
-  const count          = 12000;
-  const scrollProgress = useRef(0);
-  const prevZone       = useRef(activeZone);
-  const isBlank        = useRef(false);
-  const { scene }      = useGLTF('/logo1.glb');
+function BackgroundParticles({
+  setZone, activeZone, rotationVelocity, particleColor, onReady, solidModelVisible
+}) {
+  const pointsRef        = useRef();
+  const count            = PARTICLE_COUNT;
+  const scrollProgress   = useRef(0);
+  const prevZone         = useRef(activeZone);
+  const isBlank          = useRef(false);
+  const readyFired       = useRef(false);
+  const { scene }        = useGLTF('/logo2.glb');
 
-  // seedBuffer: sphere spread so every particle starts at a valid non-zero position
-  // modelShape: sampled from GLB mesh surface
-  // cubeShape:  wide cloud spread for zone 1
   const [seedBuffer, modelShape, cubeShape] = useMemo(() => {
     const seed = new Float32Array(count * 3);
     const m    = new Float32Array(count * 3);
@@ -322,15 +584,13 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleCo
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
 
-      // Seed — uniform sphere, guarantees no (0,0,0) entries
-      const st  = Math.random() * Math.PI * 2;
-      const sp  = Math.acos((Math.random() * 2) - 1);
-      const sr  = 2.5 + Math.random() * 0.5;
+      const st = Math.random() * Math.PI * 2;
+      const sp = Math.acos((Math.random() * 2) - 1);
+      const sr = 2.5 + Math.random() * 0.5;
       seed[i3]     = sr * Math.sin(sp) * Math.cos(st);
       seed[i3 + 1] = sr * Math.sin(sp) * Math.sin(st);
       seed[i3 + 2] = sr * Math.cos(sp);
 
-      // Model — sample GLB mesh surface
       if (tempPoints.length > 0) {
         const rp = tempPoints[Math.floor(Math.random() * tempPoints.length)];
         const ms = rp.clone().multiplyScalar(MODEL_CONFIG.scale);
@@ -339,7 +599,6 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleCo
         m[i3] = seed[i3]; m[i3 + 1] = seed[i3 + 1]; m[i3 + 2] = seed[i3 + 2];
       }
 
-      // Cloud spread for zone 1
       cb[i3]     = (Math.random() - 0.5) * 18;
       cb[i3 + 1] = (Math.random() - 0.5) * 12;
       cb[i3 + 2] = (Math.random() - 0.5) * 12;
@@ -347,6 +606,17 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleCo
 
     return [seed, m, cb];
   }, [scene, count]);
+
+  const onReadyRef = useRef(onReady);
+  useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+
+  useEffect(() => {
+    if (!readyFired.current) {
+      readyFired.current = true;
+      const t = setTimeout(() => onReadyRef.current(), 800);
+      return () => clearTimeout(t);
+    }
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const st = ScrollTrigger.create({
@@ -381,22 +651,26 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleCo
       for (let i = 0; i < count * 3; i++) {
         let target;
         if (p <= 0.20) {
-          // Zone 1: cloud
           target = cubeShape[i];
         } else if (p <= 0.40) {
-          // Zone 2: model
           target = modelShape[i];
         } else {
-          // Zones 3+: lerp model → seed sphere (about/skills hold sphere)
           target = THREE.MathUtils.lerp(
             modelShape[i], seedBuffer[i],
             THREE.MathUtils.clamp((p - 0.40) / 0.20, 0, 1)
           );
         }
-
         pos[i] += (target - pos[i]) * 0.045;
       }
       pointsRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+
+    const mat = pointsRef.current.material;
+    if (mat) {
+      // ── FIX: hide particles on page 2 regardless of solidModelVisible
+      // This prevents the broken GLB formation showing when navigating page 3→2
+      const targetOpacity = (solidModelVisible || p > 0.20) ? 0 : 0.95;
+      mat.opacity += (targetOpacity - mat.opacity) * 0.04;
     }
 
     pointsRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationVelocity.current.y;
@@ -412,7 +686,7 @@ function BackgroundParticles({ setZone, activeZone, rotationVelocity, particleCo
       <PointMaterial
         transparent
         color={particleColor}
-        size={0.022}
+        size={isMobile ? 0.03 : 0.022}
         sizeAttenuation
         depthWrite={false}
         opacity={0.95}
@@ -650,7 +924,7 @@ function SkillsGrid({ active }) {
 // ─────────────────────────────────────────────────────────────
 //  FINALE PARTICLES
 // ─────────────────────────────────────────────────────────────
-const FINALE_COUNT = 110;
+const FINALE_COUNT = 80;
 const LINK_DIST    = 100;
 const CELL_SIZE    = LINK_DIST;
 
@@ -753,23 +1027,55 @@ function FinaleParticles({ active }) {
 //  MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function App() {
-  const [activeZone,      setActiveZone]      = useState('cube');
-  const [isLoaded,        setIsLoaded]        = useState(false);
-  const [loadProgress,    setLoadProgress]    = useState(0);
-  const [hoveredDotLabel, setHoveredDotLabel] = useState(null);
+  const [activeZone,        setActiveZone]        = useState('cube');
+  const [loadProgress,      setLoadProgress]      = useState(0);
+  const [particlesReady,    setParticlesReady]    = useState(false);
+  const [isLoaded,          setIsLoaded]          = useState(false);
+  const [hoveredDotLabel,   setHoveredDotLabel]   = useState(null);
+  const [solidModelVisible, setSolidModelVisible] = useState(false);
+  const solidTimer       = useRef(null);
   const rotationVelocity = useRef({ x: 0, y: 0 });
 
+  // Loading bar
   useEffect(() => {
-    let start = null;
-    const duration = 2200;
-    const raf = (ts) => {
-      if (!start) start = ts;
-      const prog = Math.min(((ts - start) / duration) * 100, 100);
-      setLoadProgress(prog);
-      if (prog < 100) requestAnimationFrame(raf);
-      else setTimeout(() => setIsLoaded(true), 300);
+    let frame;
+    let current = 0;
+    const target = particlesReady ? 100 : 90;
+    const tick = () => {
+      const speed = particlesReady ? 3 : 0.6;
+      current += (target - current) * (speed / 100);
+      setLoadProgress(Math.min(current, 100));
+      if (Math.abs(current - target) > 0.1) frame = requestAnimationFrame(tick);
+      else setLoadProgress(target);
     };
-    requestAnimationFrame(raf);
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [particlesReady]);
+
+  useEffect(() => {
+    if (particlesReady && loadProgress >= 99) {
+      const t = setTimeout(() => setIsLoaded(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, [particlesReady, loadProgress]);
+
+  // Show logo particles after 1.2s on zone 'model', hide when leaving
+  useEffect(() => {
+    if (activeZone === 'model') {
+      solidTimer.current = setTimeout(() => setSolidModelVisible(true), 1200);
+    } else {
+      clearTimeout(solidTimer.current);
+      setSolidModelVisible(false);
+    }
+    return () => clearTimeout(solidTimer.current);
+  }, [activeZone]);
+
+  const handleParticlesReady = useCallback(() => setParticlesReady(true), []);
+
+  // Hard fallback
+  useEffect(() => {
+    const t = setTimeout(() => setParticlesReady(true), 6000);
+    return () => clearTimeout(t);
   }, []);
 
   const handleNavigate = useCallback((progress) => {
@@ -797,11 +1103,12 @@ export default function App() {
   return (
     <>
       <AnimatePresence>
-        {!isLoaded && <LoadingScreen progress={loadProgress} />}
+        {!isLoaded && <LoadingScreen progress={loadProgress} isReady={particlesReady} />}
       </AnimatePresence>
 
       <div style={{ height: '600vh', width: '100%' }} aria-hidden="true" />
 
+      <SiteLogo isLight={isLight} />
       <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} />
       <NavDots
         activeZone={activeZone}
@@ -809,6 +1116,9 @@ export default function App() {
         isLight={isLight}
         onDotHover={setHoveredDotLabel}
       />
+
+      {/* ── SYSTEM01 LOGO PARTICLES OVERLAY — page 2 only ───── */}
+      <LogoParticles visible={solidModelVisible} />
 
       {/* ── CARD DECK ─────────────────────────────────────────── */}
       <div
@@ -1089,18 +1399,33 @@ export default function App() {
 
       {/* ── THREE.JS CANVAS ─────────────────────────────────── */}
       <div className="canvas-container" style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}>
-        <Canvas camera={{ position: [0, 0, 5], fov: 85 }} frameloop="always">
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 85 }}
+          frameloop="always"
+          gl={{ antialias: !isMobile, powerPreference: 'high-performance' }}
+          dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
+        >
           <color attach="background" args={['#ffffff']} />
+          <ambientLight intensity={AMBIENT_INTENSITY} />
+          <directionalLight position={[8, 10, 5]}  intensity={3.5} color="#ffffff" />
+          <directionalLight position={[-6, -4, -4]} intensity={1.2} color="#c8d8ff" />
+          <pointLight        position={[0, 6, 4]}   intensity={2.0} color="#ffffff" />
           <Suspense fallback={null}>
             <BackgroundParticles
               setZone={setActiveZone}
               activeZone={activeZone}
               rotationVelocity={rotationVelocity}
               particleColor={particleColor}
+              onReady={handleParticlesReady}
+              solidModelVisible={solidModelVisible}
+            />
+            <WireframeModel
+              visible={false}
+              rotationRef={rotationVelocity}
             />
           </Suspense>
           <ClickHandler rotationVelocity={rotationVelocity} />
-          {activeZone !== 'blank' && (
+          {activeZone !== 'blank' && !isMobile && (
             <EffectComposer>
               <Bloom intensity={0.35} luminanceThreshold={0.88} mipmapBlur />
               <Vignette darkness={0.45} offset={0.28} />

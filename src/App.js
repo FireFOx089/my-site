@@ -11,51 +11,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ─────────────────────────────────────────────────────────────
-//  CONFIG
-// ─────────────────────────────────────────────────────────────
-const MODEL_CONFIG = {
-  scale: 1.15,
-  autoRotateSpeed: 0.001,
-};
-
-const ROTATION_CONFIG = {
-  friction: 0.97,
-  clickForce: 0.05,
-  maxVelocity: 0.15,
-};
-
+const MODEL_CONFIG = { scale: 1.15, autoRotateSpeed: 0.001 };
+const ROTATION_CONFIG = { friction: 0.97, clickForce: 0.05, maxVelocity: 0.15 };
 const AMBIENT_INTENSITY = 0.05;
-
 const isMobile = typeof window !== 'undefined' &&
   window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-const PARTICLE_COUNT = isMobile ? 3000 : 5000;
 
+// Mobile gets fewer particles for performance
+const PARTICLE_COUNT = isMobile ? 2000 : 5000;
+
+// ─── ZONES: cube + model merged into hero ───────────────────
 const ZONES = [
-  { id: 'cube',   index: '01', label: 'WELCOME',      title: 'WELCOME TO' },
-  { id: 'model',  index: '02', label: 'INTRODUCTION', title: null         },
-  { id: 'about',  index: '03', label: 'ABOUT',        title: null         },
-  { id: 'skills', index: '04', label: 'SKILLS',       title: null         },
-  { id: 'blank',  index: '05', label: 'PORTFOLIO',    title: null         },
+  { id: 'hero',   index: '01', label: 'WELCOME',  title: null },
+  { id: 'about',  index: '02', label: 'ABOUT',    title: null },
+  { id: 'skills', index: '03', label: 'SKILLS',   title: null },
+  { id: 'blank',  index: '04', label: 'PORTFOLIO', title: null },
 ];
-
 const ZONE_TOTAL = ZONES.length;
 
-// ─────────────────────────────────────────────────────────────
-//  SYSTEM01 — Magnetic Particle Logo
-//  Particles are always formed in logo shape.
-//  Mouse hover repels them. Click explodes them outward.
-//  They snap back to logo formation.
-// ─────────────────────────────────────────────────────────────
 const CONFIG_S01 = {
-  particleCount: isMobile ? 3000 : 5000,
-  particleSize:  2,
-  logoSample:    4,
-  restoreSpeed:  0.06,
-  friction:      0.88,
-  mouseRadius:   90,
-  mouseForce:    18,
-  clickForce:    60,
+  particleCount: isMobile ? 2000 : 5000,
+  particleSize:  2, logoSample: 4,
+  restoreSpeed:  0.06, friction: 0.88,
+  mouseRadius:   90, mouseForce: 18, clickForce: 60,
   color:         '#0a0a0a',
 };
 
@@ -65,22 +43,19 @@ function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const offscreen = document.createElement('canvas');
-      offscreen.width  = targetW;
-      offscreen.height = targetH;
+      offscreen.width = targetW; offscreen.height = targetH;
       const ctx = offscreen.getContext('2d');
       const scale = Math.min(targetW / img.width, targetH / img.height) * 0.7;
-      const w = img.width  * scale;
-      const h = img.height * scale;
+      const w = img.width * scale, h = img.height * scale;
       ctx.drawImage(img, (targetW - w) / 2, (targetH - h) / 2, w, h);
-      const data   = ctx.getImageData(0, 0, targetW, targetH).data;
+      const data = ctx.getImageData(0, 0, targetW, targetH).data;
       const points = [];
-      for (let py = 0; py < targetH; py += sampleStep) {
+      for (let py = 0; py < targetH; py += sampleStep)
         for (let px = 0; px < targetW; px += sampleStep) {
-          const idx        = (py * targetW + px) * 4;
-          const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-          if (data[idx + 3] > 128 && brightness < 160) points.push({ x: px, y: py });
+          const idx = (py * targetW + px) * 4;
+          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
+          if (data[idx+3] > 128 && brightness < 160) points.push({ x: px, y: py });
         }
-      }
       resolve(points);
     };
     img.onerror = () => resolve([]);
@@ -88,37 +63,30 @@ function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
   });
 }
 
+// ─── LOGO PARTICLES (2D canvas, interactive) ────────────────
 function LogoParticles({ visible }) {
   const canvasRef = useRef();
   const stateRef  = useRef({
     particles: [], targets: [],
     mouse: { x: -9999, y: -9999 },
-    isReady: false, raf: null,
-    opacity: 0, _visible: false,
+    isReady: false, raf: null, opacity: 0, _visible: false
   });
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const s   = stateRef.current;
-
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d'); const s = stateRef.current;
     const resize = async () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
       const pts = await sampleLogo('/logo.png', canvas.width, canvas.height, CONFIG_S01.logoSample);
       if (!pts.length) return;
-      const count    = Math.min(CONFIG_S01.particleCount, pts.length);
+      const count = Math.min(CONFIG_S01.particleCount, pts.length);
       const shuffled = pts.sort(() => Math.random() - 0.5).slice(0, count);
-      s.targets      = shuffled;
+      s.targets = shuffled;
       if (!s.particles.length) {
         s.particles = Array.from({ length: count }, (_, i) => ({
-          x:    Math.random() * canvas.width,
-          y:    Math.random() * canvas.height,
-          vx:   (Math.random() - 0.5) * 4,
-          vy:   (Math.random() - 0.5) * 4,
-          tx:   shuffled[i].x,
-          ty:   shuffled[i].y,
+          x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+          tx: shuffled[i].x, ty: shuffled[i].y,
           size: CONFIG_S01.particleSize * (0.5 + Math.random() * 0.8),
           alpha: 0.4 + Math.random() * 0.6,
         }));
@@ -130,93 +98,63 @@ function LogoParticles({ visible }) {
       }
       s.isReady = true;
     };
-
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
+    const ro = new ResizeObserver(resize); ro.observe(canvas);
     const draw = () => {
       s.raf = requestAnimationFrame(draw);
       s.opacity += ((s._visible ? 1 : 0) - s.opacity) * 0.05;
       if (!s.isReady || s.opacity < 0.01) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height); return;
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const mx  = s.mouse.x, my = s.mouse.y;
-      const mr2 = CONFIG_S01.mouseRadius * CONFIG_S01.mouseRadius;
-
+      const mx = s.mouse.x, my = s.mouse.y, mr2 = CONFIG_S01.mouseRadius * CONFIG_S01.mouseRadius;
       for (let i = 0; i < s.particles.length; i++) {
         const p = s.particles[i];
-
-        // Restore toward target
         p.vx += (p.tx - p.x) * CONFIG_S01.restoreSpeed;
         p.vy += (p.ty - p.y) * CONFIG_S01.restoreSpeed;
-
-        // Mouse repulsion
-        const mdx = p.x - mx, mdy = p.y - my;
-        const md2 = mdx * mdx + mdy * mdy;
+        const mdx = p.x - mx, mdy = p.y - my, md2 = mdx*mdx + mdy*mdy;
         if (md2 < mr2 && md2 > 0) {
-          const dist  = Math.sqrt(md2);
-          const force = (CONFIG_S01.mouseRadius - dist) / CONFIG_S01.mouseRadius;
+          const dist = Math.sqrt(md2), force = (CONFIG_S01.mouseRadius - dist) / CONFIG_S01.mouseRadius;
           const angle = Math.atan2(mdy, mdx);
           p.vx += Math.cos(angle) * force * CONFIG_S01.mouseForce;
           p.vy += Math.sin(angle) * force * CONFIG_S01.mouseForce;
         }
-
-        p.vx *= CONFIG_S01.friction;
-        p.vy *= CONFIG_S01.friction;
-        p.x  += p.vx;
-        p.y  += p.vy;
-
+        p.vx *= CONFIG_S01.friction; p.vy *= CONFIG_S01.friction;
+        p.x += p.vx; p.y += p.vy;
         ctx.globalAlpha = p.alpha * s.opacity;
-        ctx.fillStyle   = CONFIG_S01.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = CONFIG_S01.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
     };
-
     draw();
     return () => { cancelAnimationFrame(s.raf); ro.disconnect(); };
   }, []);
 
-  useEffect(() => {
-    stateRef.current._visible = visible;
-  }, [visible]);
+  useEffect(() => { stateRef.current._visible = visible; }, [visible]);
 
   const onMouseMove = useCallback((e) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return;
     stateRef.current.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }, []);
-
   const onMouseLeave = useCallback(() => {
     stateRef.current.mouse = { x: -9999, y: -9999 };
   }, []);
-
   const onClick = useCallback((e) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return;
     const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
     stateRef.current.particles.forEach((p) => {
-      const dx = p.x - cx, dy = p.y - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      p.vx += (dx / dist) * (CONFIG_S01.clickForce / dist);
-      p.vy += (dy / dist) * (CONFIG_S01.clickForce / dist);
+      const dx = p.x - cx, dy = p.y - cy, dist = Math.sqrt(dx*dx+dy*dy)||1;
+      p.vx += (dx/dist)*(CONFIG_S01.clickForce/dist);
+      p.vy += (dy/dist)*(CONFIG_S01.clickForce/dist);
     });
   }, []);
-
   const onTouchMove = useCallback((e) => {
     e.preventDefault();
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return;
     const t = e.touches[0];
     stateRef.current.mouse = { x: t.clientX - rect.left, y: t.clientY - rect.top };
   }, []);
-
   const onTouchEnd = useCallback(() => {
     stateRef.current.mouse = { x: -9999, y: -9999 };
   }, []);
@@ -225,10 +163,8 @@ function LogoParticles({ visible }) {
     <canvas
       ref={canvasRef}
       style={{
-        position: 'fixed', inset: 0,
-        width: '100%', height: '100%',
-        zIndex: 5,
-        pointerEvents: visible ? 'all' : 'none',
+        position: 'fixed', inset: 0, width: '100%', height: '100%',
+        zIndex: 5, pointerEvents: visible ? 'all' : 'none'
       }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
@@ -239,32 +175,22 @@ function LogoParticles({ visible }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  SITE LOGO — fixed top-left, swaps color on page 5
-// ─────────────────────────────────────────────────────────────
+// ─── SITE LOGO ───────────────────────────────────────────────
 function SiteLogo({ isLight }) {
   return (
     <img
       src={isLight ? '/logowhite.png' : '/logo.png'}
       alt="Studio Logo"
       style={{
-        position: 'fixed',
-        top: '1.4rem',
-        left: '1.6rem',
-        height: '30px',
-        width: 'auto',
-        zIndex: 200,
-        pointerEvents: 'none',
-        display: 'block',
+        position: 'fixed', top: '1.4rem', left: '1.6rem',
+        height: '30px', width: 'auto', zIndex: 200,
+        pointerEvents: 'none', display: 'block'
       }}
     />
   );
 }
 
-
-// ─────────────────────────────────────────────────────────────
-//  LOADING SCREEN
-// ─────────────────────────────────────────────────────────────
+// ─── LOADING SCREEN ──────────────────────────────────────────
 function LoadingScreen({ progress, isReady }) {
   return (
     <motion.div
@@ -294,14 +220,11 @@ function LoadingScreen({ progress, isReady }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  ZONE COUNTER
-// ─────────────────────────────────────────────────────────────
+// ─── ZONE COUNTER ────────────────────────────────────────────
 function ZoneCounter({ activeZone, isLight }) {
-  const zone       = ZONES.find(z => z.id === activeZone) || ZONES[0];
-  const color      = isLight ? '#ffffff' : 'var(--ink)';
+  const zone = ZONES.find(z => z.id === activeZone) || ZONES[0];
+  const color = isLight ? '#ffffff' : 'var(--ink)';
   const colorFaint = isLight ? 'rgba(255,255,255,0.4)' : 'var(--ink)';
-
   return (
     <div className="zone-counter" style={{ color }}>
       <AnimatePresence mode="wait">
@@ -318,27 +241,25 @@ function ZoneCounter({ activeZone, isLight }) {
             <div className="zone-divider" style={{ background: colorFaint }} />
             <span className="zone-label" style={{ color: colorFaint }}>{zone.label}</span>
           </div>
-          <span className="zone-total" style={{ color: colorFaint }}>/ {String(ZONE_TOTAL).padStart(2, '0')}</span>
+          <span className="zone-total" style={{ color: colorFaint }}>
+            / {String(ZONE_TOTAL).padStart(2, '0')}
+          </span>
         </motion.div>
       </AnimatePresence>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  NAVIGATION DOTS
-// ─────────────────────────────────────────────────────────────
+// ─── NAV DOTS ────────────────────────────────────────────────
 function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
-
-  const borderColor       = isLight ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
+  const borderColor = isLight ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
   const activeBorderColor = isLight ? '#ffffff' : 'var(--ink)';
-  const fillColor         = isLight ? '#ffffff' : 'var(--ink)';
-
+  const fillColor = isLight ? '#ffffff' : 'var(--ink)';
   return (
     <nav className="nav-dots" aria-label="Section navigation">
       {ZONES.map((zone, i) => {
-        const isHovered   = hoveredIndex === i;
+        const isHovered = hoveredIndex === i;
         const isNeighbour = hoveredIndex !== null && Math.abs(hoveredIndex - i) === 1;
         return (
           <motion.button
@@ -350,7 +271,7 @@ function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
             aria-label={`Go to ${zone.label}`}
             animate={{
               scale: isHovered ? 2 : isNeighbour ? 1.4 : 1,
-              borderColor: activeZone === zone.id ? activeBorderColor : borderColor,
+              borderColor: activeZone === zone.id ? activeBorderColor : borderColor
             }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
             style={{ originX: '50%', originY: '50%' }}
@@ -363,9 +284,7 @@ function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  SCROLL INDICATOR
-// ─────────────────────────────────────────────────────────────
+// ─── SCROLL INDICATOR ────────────────────────────────────────
 function ScrollIndicator({ visible }) {
   return (
     <AnimatePresence>
@@ -395,28 +314,20 @@ function ScrollIndicator({ visible }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  CUSTOM CURSOR
-// ─────────────────────────────────────────────────────────────
+// ─── HTML CURSOR ─────────────────────────────────────────────
 function HTMLCursor({ isLight, hoveredDotLabel }) {
-  const cursorOuterRef = useRef();
-  const cursorInnerRef = useRef();
-  const labelRef       = useRef();
-  const mousePos  = useRef({ x: -200, y: -200 });
-  const outerPos  = useRef({ x: -200, y: -200 });
-  const innerPos  = useRef({ x: -200, y: -200 });
-  const rafId     = useRef(null);
-  const isVisible = useRef(false);
-
+  const cursorOuterRef = useRef(); const cursorInnerRef = useRef(); const labelRef = useRef();
+  const mousePos = useRef({ x: -200, y: -200 });
+  const outerPos = useRef({ x: -200, y: -200 });
+  const innerPos = useRef({ x: -200, y: -200 });
+  const rafId = useRef(null); const isVisible = useRef(false);
   const isTouchDevice = typeof window !== 'undefined' &&
     window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-  const color       = isLight ? '#ffffff' : 'var(--ink)';
+  const color = isLight ? '#ffffff' : 'var(--ink)';
   const borderColor = isLight ? 'rgba(255,255,255,0.8)' : 'var(--ink)';
 
   useEffect(() => {
     if (isTouchDevice) return;
-
     const onMove = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
       if (!isVisible.current) {
@@ -426,26 +337,23 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
     };
     const onLeave = () => { isVisible.current = false; };
     const onEnter = () => { isVisible.current = true; };
-
     window.addEventListener('mousemove', onMove);
     document.addEventListener('mouseleave', onLeave);
     document.addEventListener('mouseenter', onEnter);
-
     const tick = () => {
       innerPos.current.x += (mousePos.current.x - innerPos.current.x) * 0.3;
       innerPos.current.y += (mousePos.current.y - innerPos.current.y) * 0.3;
       outerPos.current.x += (innerPos.current.x - outerPos.current.x) * 0.1;
       outerPos.current.y += (innerPos.current.y - outerPos.current.y) * 0.1;
-
       const o = isVisible.current ? 1 : 0;
       if (cursorInnerRef.current) {
-        cursorInnerRef.current.style.left    = `${innerPos.current.x}px`;
-        cursorInnerRef.current.style.top     = `${innerPos.current.y}px`;
+        cursorInnerRef.current.style.left = `${innerPos.current.x}px`;
+        cursorInnerRef.current.style.top  = `${innerPos.current.y}px`;
         cursorInnerRef.current.style.opacity = o;
       }
       if (cursorOuterRef.current) {
-        cursorOuterRef.current.style.left    = `${outerPos.current.x}px`;
-        cursorOuterRef.current.style.top     = `${outerPos.current.y}px`;
+        cursorOuterRef.current.style.left = `${outerPos.current.x}px`;
+        cursorOuterRef.current.style.top  = `${outerPos.current.y}px`;
         cursorOuterRef.current.style.opacity = o;
       }
       if (labelRef.current) {
@@ -455,7 +363,6 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
       rafId.current = requestAnimationFrame(tick);
     };
     tick();
-
     return () => {
       window.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseleave', onLeave);
@@ -465,28 +372,35 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
   }, [isTouchDevice]);
 
   if (isTouchDevice) return null;
-
   return (
     <>
-      <div ref={cursorOuterRef} className="html-cursor-outer"
-        style={{ borderColor, width: 42, height: 42, borderRadius: '50%' }} />
-      <div ref={cursorInnerRef} className="html-cursor-inner"
-        style={{ background: color }} />
-      <div ref={labelRef} style={{ position: 'fixed', transform: 'translateY(-50%)', zIndex: 10000, pointerEvents: 'none' }}>
+      <div
+        ref={cursorOuterRef}
+        className="html-cursor-outer"
+        style={{ borderColor, width: 42, height: 42, borderRadius: '50%' }}
+      />
+      <div ref={cursorInnerRef} className="html-cursor-inner" style={{ background: color }} />
+      <div
+        ref={labelRef}
+        style={{
+          position: 'fixed', transform: 'translateY(-50%)',
+          zIndex: 10000, pointerEvents: 'none'
+        }}
+      >
         <AnimatePresence mode="wait">
           {hoveredDotLabel && (
             <motion.span
               key={hoveredDotLabel}
               initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0  }}
-              exit={{    opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 color,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                 fontSize: '0.58rem', letterSpacing: '0.22em',
                 textTransform: 'uppercase', fontWeight: 400,
-                whiteSpace: 'nowrap', display: 'block',
+                whiteSpace: 'nowrap', display: 'block'
               }}
             >
               {hoveredDotLabel}
@@ -498,12 +412,112 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  WIREFRAME MODEL — kept for rotation sync, invisible when LogoParticles shown
-// ─────────────────────────────────────────────────────────────
+// ─── CINEMATIC HERO TITLE ────────────────────────────────────
+// Replaces the old center title overlay for the hero zone.
+// Shows during hero phase 1 (scroll 0–0.10), fades as logo emerges.
+function CinematicHeroTitle({ visible, logoProgress }) {
+  // Stay fully visible until logo starts forming (~0.55), then fade sharply
+  const fadeStart = 0.50;
+  const fadeEnd   = 0.62;
+  const t = Math.max(0, Math.min(1, (logoProgress - fadeStart) / (fadeEnd - fadeStart)));
+  const titleOpacity = 1 - t;
+  const titleY = t * -24;
+
+  const lines = ['WELCOME', 'TO'];
+
+  return (
+    <div
+      className="ui-overlay"
+      style={{ pointerEvents: 'none', zIndex: 10 }}
+    >
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            key="hero-title"
+            className="center-content"
+            style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Eyebrow */}
+            <motion.div
+              className="center-eyebrow"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.0, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {ZONES[0].index}
+            </motion.div>
+
+            {/* Main title — letter-by-letter stagger */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1em' }}>
+              {lines.map((line, li) => (
+                <div key={line} style={{ display: 'flex', overflow: 'hidden' }}>
+                  {line.split('').map((char, ci) => (
+                    <motion.span
+                      key={`${li}-${ci}`}
+                      style={{
+                        display: 'inline-block',
+                        fontSize: 'clamp(3rem, 13vw, 9rem)',
+                        fontFamily: "'Bungee', sans-serif",
+                        textTransform: 'uppercase',
+                        lineHeight: 1.0,
+                        letterSpacing: '0.05em',
+                        color: 'var(--ink)',
+                      }}
+                      initial={{ y: '110%', opacity: 0 }}
+                      animate={{ y: '0%', opacity: 1 }}
+                      transition={{
+                        duration: 0.9,
+                        delay: 0.5 + li * 0.18 + ci * 0.055,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    >
+                      {char}
+                    </motion.span>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Decorative line */}
+            <motion.div
+              className="decorative-line"
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: 1.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            />
+
+            {/* Sub-label that fades in last */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.7, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                fontSize: '0.65rem',
+                letterSpacing: '0.28em',
+                textTransform: 'uppercase',
+                color: 'var(--ink)',
+                opacity: 0.35,
+                fontWeight: 300,
+              }}
+            >
+              Studio · Creative Direction
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── WIREFRAME MODEL (desktop only) ─────────────────────────
 function WireframeModel({ visible, rotationRef }) {
   const { scene } = useGLTF('/logo2.glb');
-  const groupRef   = useRef();
+  const groupRef = useRef();
   const opacityRef = useRef(0);
 
   const clonedScene = useMemo(() => {
@@ -511,13 +525,12 @@ function WireframeModel({ visible, rotationRef }) {
     clone.traverse((child) => {
       if (child.isMesh) {
         child.material = new THREE.MeshBasicMaterial({
-          color: 0xffffff, transparent: true, opacity: 0, depthWrite: false,
+          color: 0xffffff, transparent: true, opacity: 0, depthWrite: false
         });
         child.scale.setScalar(MODEL_CONFIG.scale);
-
-        const edges     = new THREE.EdgesGeometry(child.geometry, 15);
-        const lineMat   = new THREE.LineBasicMaterial({
-          color: 0x0a0a0a, transparent: true, opacity: 0, linewidth: 1,
+        const edges = new THREE.EdgesGeometry(child.geometry, 15);
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0x0a0a0a, transparent: true, opacity: 0, linewidth: 1
         });
         const wireframe = new THREE.LineSegments(edges, lineMat);
         wireframe.scale.setScalar(MODEL_CONFIG.scale);
@@ -532,14 +545,11 @@ function WireframeModel({ visible, rotationRef }) {
     if (!groupRef.current) return;
     const target = visible ? 1 : 0;
     opacityRef.current += (target - opacityRef.current) * 0.05;
-
     groupRef.current.traverse((child) => {
       if (child.isMesh && child.material) child.material.opacity = 0;
-      if (child.isLineSegments && child.userData.isWireframe && child.material) {
+      if (child.isLineSegments && child.userData.isWireframe && child.material)
         child.material.opacity = opacityRef.current;
-      }
     });
-
     if (rotationRef?.current) {
       groupRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationRef.current.y;
       groupRef.current.rotation.x += rotationRef.current.x;
@@ -549,32 +559,33 @@ function WireframeModel({ visible, rotationRef }) {
   return <primitive ref={groupRef} object={clonedScene} />;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  PARTICLES
-// ─────────────────────────────────────────────────────────────
+// ─── BACKGROUND PARTICLES (Three.js) ────────────────────────
+// Hero zone: early scroll = cube shape, later scroll = logo shape.
+// about/skills/blank = sphere scatter.
 function BackgroundParticles({
-  setZone, activeZone, rotationVelocity, particleColor, onReady, solidModelVisible
+  setZone, activeZone, rotationVelocity,
+  particleColor, onReady, heroLogoProgress, setHeroLogoProgress
 }) {
-  const pointsRef        = useRef();
-  const count            = PARTICLE_COUNT;
-  const scrollProgress   = useRef(0);
-  const prevZone         = useRef(activeZone);
-  const isBlank          = useRef(false);
-  const readyFired       = useRef(false);
-  const { scene }        = useGLTF('/logo2.glb');
+  const pointsRef = useRef();
+  const count = PARTICLE_COUNT;
+  const scrollProgress = useRef(0);
+  const prevZone = useRef(activeZone);
+  const readyFired = useRef(false);
+
+  const { scene } = useGLTF('/logo2.glb');
 
   const [seedBuffer, modelShape, cubeShape] = useMemo(() => {
     const seed = new Float32Array(count * 3);
     const m    = new Float32Array(count * 3);
     const cb   = new Float32Array(count * 3);
-
     const tempPoints = [];
+
     scene.traverse((child) => {
       if (child.isMesh) {
         const positions = child.geometry.attributes.position.array;
-        const matrix    = child.matrixWorld;
+        const matrix = child.matrixWorld;
         for (let i = 0; i < positions.length; i += 3) {
-          const v = new THREE.Vector3(positions[i], positions[i + 1], positions[i + 2]);
+          const v = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
           v.applyMatrix4(matrix);
           tempPoints.push(v);
         }
@@ -583,48 +594,45 @@ function BackgroundParticles({
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-
       const st = Math.random() * Math.PI * 2;
       const sp = Math.acos((Math.random() * 2) - 1);
       const sr = 2.5 + Math.random() * 0.5;
-      seed[i3]     = sr * Math.sin(sp) * Math.cos(st);
-      seed[i3 + 1] = sr * Math.sin(sp) * Math.sin(st);
-      seed[i3 + 2] = sr * Math.cos(sp);
+      seed[i3]   = sr * Math.sin(sp) * Math.cos(st);
+      seed[i3+1] = sr * Math.sin(sp) * Math.sin(st);
+      seed[i3+2] = sr * Math.cos(sp);
 
       if (tempPoints.length > 0) {
         const rp = tempPoints[Math.floor(Math.random() * tempPoints.length)];
         const ms = rp.clone().multiplyScalar(MODEL_CONFIG.scale);
-        m[i3] = ms.x; m[i3 + 1] = ms.y; m[i3 + 2] = ms.z;
+        m[i3] = ms.x; m[i3+1] = ms.y; m[i3+2] = ms.z;
       } else {
-        m[i3] = seed[i3]; m[i3 + 1] = seed[i3 + 1]; m[i3 + 2] = seed[i3 + 2];
+        m[i3] = seed[i3]; m[i3+1] = seed[i3+1]; m[i3+2] = seed[i3+2];
       }
 
-      cb[i3]     = (Math.random() - 0.5) * 18;
-      cb[i3 + 1] = (Math.random() - 0.5) * 12;
-      cb[i3 + 2] = (Math.random() - 0.5) * 12;
+      cb[i3]   = (Math.random()-0.5)*18;
+      cb[i3+1] = (Math.random()-0.5)*12;
+      cb[i3+2] = (Math.random()-0.5)*12;
     }
-
     return [seed, m, cb];
   }, [scene, count]);
 
   const onReadyRef = useRef(onReady);
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!readyFired.current) {
       readyFired.current = true;
       const t = setTimeout(() => onReadyRef.current(), 800);
       return () => clearTimeout(t);
     }
-  }, []); // eslint-disable-line
+  }, []);
 
   useEffect(() => {
     const st = ScrollTrigger.create({
-      trigger: 'body',
-      start: 'top top',
-      end: 'bottom bottom',
+      trigger: 'body', start: 'top top', end: 'bottom bottom',
       scrub: 1.2,
-      onUpdate: (self) => { scrollProgress.current = self.progress; },
+      onUpdate: (self) => { scrollProgress.current = self.progress; }
     });
     return () => st.kill();
   }, []);
@@ -633,32 +641,40 @@ function BackgroundParticles({
     if (!pointsRef.current) return;
     const p = scrollProgress.current;
 
-    let newZone = 'cube';
-    if      (p > 0.80) newZone = 'blank';
-    else if (p > 0.60) newZone = 'skills';
-    else if (p > 0.40) newZone = 'about';
-    else if (p > 0.20) newZone = 'model';
+    // ── Zone detection (4 zones, each ~25% of scroll) ──
+    // hero:   0.00 – 0.33
+    // about:  0.33 – 0.55
+    // skills: 0.55 – 0.78
+    // blank:  0.78 – 1.00
+    let newZone = 'hero';
+    if      (p > 0.78) newZone = 'blank';
+    else if (p > 0.55) newZone = 'skills';
+    else if (p > 0.33) newZone = 'about';
 
     if (prevZone.current !== newZone) {
       prevZone.current = newZone;
-      isBlank.current  = newZone === 'blank';
       setZone(newZone);
     }
 
-    if (!isBlank.current) {
-      const pos = pointsRef.current.geometry.attributes.position.array;
+    // Within hero zone: first half = cube, second half morphs to logo
+    // heroLogoProgress: 0 at p=0.15, 1 at p=0.33
+    const logoT = THREE.MathUtils.clamp((p - 0.15) / 0.18, 0, 1);
+    setHeroLogoProgress(logoT);
 
+    const pos = pointsRef.current.geometry.attributes.position.array;
+    if (newZone !== 'blank') {
       for (let i = 0; i < count * 3; i++) {
         let target;
-        if (p <= 0.20) {
+        if (p <= 0.15) {
+          // Cube / scattered shape — hero title phase
           target = cubeShape[i];
-        } else if (p <= 0.40) {
-          target = modelShape[i];
+        } else if (p <= 0.33) {
+          // Morph to logo shape — cinematic reveal phase
+          target = THREE.MathUtils.lerp(cubeShape[i], modelShape[i], logoT);
         } else {
-          target = THREE.MathUtils.lerp(
-            modelShape[i], seedBuffer[i],
-            THREE.MathUtils.clamp((p - 0.40) / 0.20, 0, 1)
-          );
+          // about / skills — scatter to sphere
+          const scatterT = THREE.MathUtils.clamp((p - 0.33) / 0.22, 0, 1);
+          target = THREE.MathUtils.lerp(modelShape[i], seedBuffer[i], scatterT);
         }
         pos[i] += (target - pos[i]) * 0.045;
       }
@@ -667,9 +683,8 @@ function BackgroundParticles({
 
     const mat = pointsRef.current.material;
     if (mat) {
-      // ── FIX: hide particles on page 2 regardless of solidModelVisible
-      // This prevents the broken GLB formation showing when navigating page 3→2
-      const targetOpacity = (solidModelVisible || p > 0.20) ? 0 : 0.95;
+      // Fade out 2D logo canvas region: keep 3D particles visible throughout hero
+      const targetOpacity = newZone === 'blank' ? 0 : p > 0.28 ? 0 : 0.95;
       mat.opacity += (targetOpacity - mat.opacity) * 0.04;
     }
 
@@ -686,7 +701,7 @@ function BackgroundParticles({
       <PointMaterial
         transparent
         color={particleColor}
-        size={isMobile ? 0.03 : 0.022}
+        size={isMobile ? 0.035 : 0.022}
         sizeAttenuation
         depthWrite={false}
         opacity={0.95}
@@ -695,68 +710,57 @@ function BackgroundParticles({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  CLICK / DRAG HANDLER
-// ─────────────────────────────────────────────────────────────
+// ─── CLICK HANDLER ───────────────────────────────────────────
 function ClickHandler({ rotationVelocity }) {
   const { size } = useThree();
-  const startPos   = useRef({ x: 0, y: 0 });
+  const startPos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
 
   useEffect(() => {
     const onDown = (x, y) => { startPos.current = { x, y }; isDragging.current = true; };
     const onUp = (x, y) => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
+      if (!isDragging.current) return; isDragging.current = false;
       const dx = (x - startPos.current.x) / size.width;
       const dy = (y - startPos.current.y) / size.height;
       if (Math.abs(x - startPos.current.x) > 2 || Math.abs(y - startPos.current.y) > 2) {
         rotationVelocity.current.y = THREE.MathUtils.clamp(
-          dx * ROTATION_CONFIG.clickForce * 6, -ROTATION_CONFIG.maxVelocity, ROTATION_CONFIG.maxVelocity);
+          dx * ROTATION_CONFIG.clickForce * 6, -ROTATION_CONFIG.maxVelocity, ROTATION_CONFIG.maxVelocity
+        );
         rotationVelocity.current.x = THREE.MathUtils.clamp(
-          dy * ROTATION_CONFIG.clickForce * 6, -ROTATION_CONFIG.maxVelocity, ROTATION_CONFIG.maxVelocity);
+          dy * ROTATION_CONFIG.clickForce * 6, -ROTATION_CONFIG.maxVelocity, ROTATION_CONFIG.maxVelocity
+        );
       }
     };
-
-    const mDown  = (e) => onDown(e.clientX, e.clientY);
-    const mUp    = (e) => onUp(e.clientX, e.clientY);
+    const mDown = (e) => onDown(e.clientX, e.clientY);
+    const mUp   = (e) => onUp(e.clientX, e.clientY);
     const tStart = (e) => onDown(e.touches[0].clientX, e.touches[0].clientY);
     const tEnd   = (e) => onUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-
-    window.addEventListener('mousedown',  mDown);
-    window.addEventListener('mouseup',    mUp);
+    window.addEventListener('mousedown', mDown);
+    window.addEventListener('mouseup', mUp);
     window.addEventListener('touchstart', tStart, { passive: true });
-    window.addEventListener('touchend',   tEnd,   { passive: true });
+    window.addEventListener('touchend', tEnd, { passive: true });
     return () => {
-      window.removeEventListener('mousedown',  mDown);
-      window.removeEventListener('mouseup',    mUp);
+      window.removeEventListener('mousedown', mDown);
+      window.removeEventListener('mouseup', mUp);
       window.removeEventListener('touchstart', tStart);
-      window.removeEventListener('touchend',   tEnd);
+      window.removeEventListener('touchend', tEnd);
     };
   }, [size, rotationVelocity]);
 
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  FLUID BLOB REVEAL IMAGE
-// ─────────────────────────────────────────────────────────────
+// ─── FLUID REVEAL IMAGE ──────────────────────────────────────
 function FluidRevealImage({ baseImage, revealImage }) {
-  const containerRef = useRef();
-  const blobRef      = useRef();
-  const mouse        = useRef({ x: 0, y: 0 });
-  const blob         = useRef({ x: 0, y: 0 });
-  const rafRef       = useRef();
-  const isHovered    = useRef(false);
-  const blobOpacity  = useRef(0);
-  const blobRadius   = useRef(0);
+  const containerRef = useRef(); const blobRef = useRef();
+  const mouse = useRef({ x: 0, y: 0 }); const blob = useRef({ x: 0, y: 0 });
+  const rafRef = useRef(); const isHovered = useRef(false);
+  const blobOpacity = useRef(0); const blobRadius = useRef(0);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const el = containerRef.current; if (!el) return;
     const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-    const onMove  = (e) => {
+    const onMove = (e) => {
       const rect = el.getBoundingClientRect();
       mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
@@ -764,48 +768,41 @@ function FluidRevealImage({ baseImage, revealImage }) {
     const onLeave = () => { isHovered.current = false; };
     const onTouchMove = (e) => {
       e.preventDefault();
-      const rect = el.getBoundingClientRect();
-      const t = e.touches[0];
+      const rect = el.getBoundingClientRect(); const t = e.touches[0];
       mouse.current = { x: t.clientX - rect.left, y: t.clientY - rect.top };
       isHovered.current = true;
     };
     const onTouchEnd = () => { isHovered.current = false; };
-
     if (isTouch) {
-      el.addEventListener('touchmove',  onTouchMove, { passive: false });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
       el.addEventListener('touchstart', onTouchMove, { passive: false });
-      el.addEventListener('touchend',   onTouchEnd);
+      el.addEventListener('touchend', onTouchEnd);
     } else {
-      el.addEventListener('mousemove',  onMove);
+      el.addEventListener('mousemove', onMove);
       el.addEventListener('mouseenter', onEnter);
       el.addEventListener('mouseleave', onLeave);
     }
-
     const animate = () => {
       blob.current.x += (mouse.current.x - blob.current.x) * 0.1;
       blob.current.y += (mouse.current.y - blob.current.y) * 0.1;
-      const tOpacity = isHovered.current ? 1 : 0;
-      const tRadius  = isHovered.current ? 52 : 0;
-      blobOpacity.current += (tOpacity - blobOpacity.current) * 0.07;
-      blobRadius.current  += (tRadius  - blobRadius.current)  * 0.1;
+      blobOpacity.current += ((isHovered.current ? 1 : 0) - blobOpacity.current) * 0.07;
+      blobRadius.current += ((isHovered.current ? 52 : 0) - blobRadius.current) * 0.1;
       if (blobRef.current) {
-        const { x, y } = blob.current;
-        const r = blobRadius.current;
-        blobRef.current.style.opacity        = blobOpacity.current;
-        blobRef.current.style.clipPath       = `circle(${r}px at ${x}px ${y}px)`;
+        const { x, y } = blob.current; const r = blobRadius.current;
+        blobRef.current.style.opacity = blobOpacity.current;
+        blobRef.current.style.clipPath = `circle(${r}px at ${x}px ${y}px)`;
         blobRef.current.style.webkitClipPath = `circle(${r}px at ${x}px ${y}px)`;
       }
       rafRef.current = requestAnimationFrame(animate);
     };
     animate();
-
     return () => {
       if (isTouch) {
-        el.removeEventListener('touchmove',  onTouchMove);
+        el.removeEventListener('touchmove', onTouchMove);
         el.removeEventListener('touchstart', onTouchMove);
-        el.removeEventListener('touchend',   onTouchEnd);
+        el.removeEventListener('touchend', onTouchEnd);
       } else {
-        el.removeEventListener('mousemove',  onMove);
+        el.removeEventListener('mousemove', onMove);
         el.removeEventListener('mouseenter', onEnter);
         el.removeEventListener('mouseleave', onLeave);
       }
@@ -815,61 +812,48 @@ function FluidRevealImage({ baseImage, revealImage }) {
 
   return (
     <div ref={containerRef} className="about-image-container fluid-reveal-container">
-      <img src={baseImage}   alt="Portrait"              className="about-image fluid-base"   />
+      <img src={baseImage} alt="Portrait" className="about-image fluid-base" />
       <img ref={blobRef} src={revealImage} alt="Portrait alternate" className="about-image fluid-reveal" />
       <div className="image-gradient-overlay" />
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  WAVE DOT GRID
-// ─────────────────────────────────────────────────────────────
+// ─── WAVE DOT GRID ───────────────────────────────────────────
 function WaveDotGrid({ visible }) {
-  const canvasRef = useRef();
-  const rafRef    = useRef();
+  const canvasRef = useRef(); const rafRef = useRef();
   const activeRef = useRef(visible);
-
   useEffect(() => { activeRef.current = visible; }, [visible]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const SPACING = 26, AMPLITUDE = 9, FREQ = 0.048, SPEED = 0.018, DOT_R = 1.3;
     let W, H, cols, rows, t = 0, opacity = 0;
-
     const resize = () => {
-      W = canvas.width  = window.innerWidth;
+      W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
       cols = Math.ceil(W / SPACING) + 2;
       rows = Math.ceil(H / SPACING) + 2;
     };
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(document.documentElement);
-
+    const ro = new ResizeObserver(resize); ro.observe(document.documentElement);
     const draw = () => {
       opacity += ((activeRef.current ? 1 : 0) - opacity) * 0.04;
       ctx.clearRect(0, 0, W, H);
       if (opacity > 0.005) {
-        t += SPEED;
-        ctx.beginPath();
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const bx = c * SPACING, by = r * SPACING;
-            const w1 = Math.sin(bx * FREQ + t) * AMPLITUDE;
-            const w2 = Math.cos(by * FREQ * 0.8 + t * 0.7) * AMPLITUDE * 0.6;
-            const d  = Math.sin((bx + by) * FREQ * 0.5 + t * 1.2) * AMPLITUDE * 0.4;
-            const x  = bx + w1 + d, y = by + w2 + d;
-            const phase = Math.sin(bx * FREQ * 1.5 + by * FREQ + t * 1.1);
-            const r2 = DOT_R * (0.55 + 0.45 * ((phase + 1) / 2));
-            ctx.moveTo(x + r2, y);
-            ctx.arc(x, y, r2, 0, Math.PI * 2);
-          }
+        t += SPEED; ctx.beginPath();
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const bx = c * SPACING, by = r * SPACING;
+          const w1 = Math.sin(bx * FREQ + t) * AMPLITUDE;
+          const w2 = Math.cos(by * FREQ * 0.8 + t * 0.7) * AMPLITUDE * 0.6;
+          const d  = Math.sin((bx + by) * FREQ * 0.5 + t * 1.2) * AMPLITUDE * 0.4;
+          const x = bx + w1 + d, y = by + w2 + d;
+          const phase = Math.sin(bx * FREQ * 1.5 + by * FREQ + t * 1.1);
+          const r2 = DOT_R * (0.55 + 0.45 * ((phase + 1) / 2));
+          ctx.moveTo(x + r2, y); ctx.arc(x, y, r2, 0, Math.PI * 2);
         }
-        ctx.fillStyle = `rgba(0,0,0,${0.22 * opacity})`;
-        ctx.fill();
+        ctx.fillStyle = `rgba(0,0,0,${0.22 * opacity})`; ctx.fill();
       }
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -880,9 +864,7 @@ function WaveDotGrid({ visible }) {
   return <canvas ref={canvasRef} className="wave-dot-canvas" aria-hidden="true" />;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  SKILLS GRID
-// ─────────────────────────────────────────────────────────────
+// ─── SKILLS GRID ─────────────────────────────────────────────
 const SKILL_ITEMS = [
   { category: 'Design',   items: ['Figma', 'After Effects', 'Cinema 4D', 'Blender'] },
   { category: 'Frontend', items: ['React', 'Three.js', 'GSAP', 'WebGL'] },
@@ -921,98 +903,69 @@ function SkillsGrid({ active }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-//  FINALE PARTICLES
-// ─────────────────────────────────────────────────────────────
-const FINALE_COUNT = 80;
-const LINK_DIST    = 100;
-const CELL_SIZE    = LINK_DIST;
+// ─── FINALE PARTICLES ────────────────────────────────────────
+const FINALE_COUNT = 80, LINK_DIST = 100, CELL_SIZE = LINK_DIST;
 
 function FinaleParticles({ active }) {
-  const canvasRef = useRef();
-  const rafRef    = useRef();
+  const canvasRef = useRef(); const rafRef = useRef();
   const activeRef = useRef(active);
   const stateRef  = useRef({ particles: [], W: 0, H: 0, opacity: 0 });
-
   useEffect(() => { activeRef.current = active; }, [active]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d');
-
     const spawn = (W, H) => Array.from({ length: FINALE_COUNT }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: 0.9 + Math.random() * 1.4,
-      vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.10,
-      alpha: 0.15 + Math.random() * 0.4,
-      pulse: Math.random() * Math.PI * 2, pulseSpeed: 0.007 + Math.random() * 0.01,
+      x: Math.random()*W, y: Math.random()*H,
+      r: 0.9+Math.random()*1.4,
+      vx: (Math.random()-0.5)*0.15, vy: (Math.random()-0.5)*0.10,
+      alpha: 0.15+Math.random()*0.4,
+      pulse: Math.random()*Math.PI*2, pulseSpeed: 0.007+Math.random()*0.01
     }));
-
     const resize = () => {
-      const W = canvas.width  = window.innerWidth;
-      const H = canvas.height = window.innerHeight;
+      const W = canvas.width = window.innerWidth, H = canvas.height = window.innerHeight;
       stateRef.current.W = W; stateRef.current.H = H;
       stateRef.current.particles = spawn(W, H);
     };
-    resize();
-    window.addEventListener('resize', resize);
-
+    resize(); window.addEventListener('resize', resize);
     const draw = () => {
       const s = stateRef.current;
       s.opacity += ((activeRef.current ? 1 : 0) - s.opacity) * 0.04;
       if (s.opacity < 0.005) { rafRef.current = requestAnimationFrame(draw); return; }
-
       ctx.clearRect(0, 0, s.W, s.H);
       const { particles: pts, W, H, opacity } = s;
-      const cols = Math.ceil(W / CELL_SIZE) + 1;
-      const rows = Math.ceil(H / CELL_SIZE) + 1;
-      const grid = new Array(cols * rows);
-
+      const cols = Math.ceil(W/CELL_SIZE)+1, rows = Math.ceil(H/CELL_SIZE)+1;
+      const grid = new Array(cols*rows);
       for (let i = 0; i < pts.length; i++) {
-        const p = pts[i];
-        p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
-        if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
-        if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
-        const cx = Math.floor(p.x / CELL_SIZE), cy = Math.floor(p.y / CELL_SIZE);
-        const key = cy * cols + cx;
-        if (!grid[key]) grid[key] = [];
-        grid[key].push(i);
+        const p = pts[i]; p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
+        if (p.x < -10) p.x = W+10; if (p.x > W+10) p.x = -10;
+        if (p.y < -10) p.y = H+10; if (p.y > H+10) p.y = -10;
+        const cx = Math.floor(p.x/CELL_SIZE), cy = Math.floor(p.y/CELL_SIZE), key = cy*cols+cx;
+        if (!grid[key]) grid[key] = []; grid[key].push(i);
       }
-
       ctx.lineWidth = 0.5;
       for (let i = 0; i < pts.length; i++) {
         const a = pts[i];
-        const cx = Math.floor(a.x / CELL_SIZE), cy = Math.floor(a.y / CELL_SIZE);
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = cx + dx, ny = cy + dy;
-            if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-            const cell = grid[ny * cols + nx];
-            if (!cell) continue;
-            for (let k = 0; k < cell.length; k++) {
-              const j = cell[k];
-              if (j <= i) continue;
-              const b = pts[j];
-              const dist = Math.hypot(a.x - b.x, a.y - b.y);
-              if (dist < LINK_DIST) {
-                ctx.beginPath();
-                ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-                ctx.strokeStyle = `rgba(255,255,255,${(1 - dist / LINK_DIST) * 0.07 * opacity})`;
-                ctx.stroke();
-              }
+        const cx = Math.floor(a.x/CELL_SIZE), cy = Math.floor(a.y/CELL_SIZE);
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = cx+dx, ny = cy+dy;
+          if (nx<0||ny<0||nx>=cols||ny>=rows) continue;
+          const cell = grid[ny*cols+nx]; if (!cell) continue;
+          for (let k = 0; k < cell.length; k++) {
+            const j = cell[k]; if (j <= i) continue;
+            const b = pts[j], dist = Math.hypot(a.x-b.x, a.y-b.y);
+            if (dist < LINK_DIST) {
+              ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+              ctx.strokeStyle = `rgba(255,255,255,${(1-dist/LINK_DIST)*0.07*opacity})`;
+              ctx.stroke();
             }
           }
         }
       }
-
       for (let i = 0; i < pts.length; i++) {
-        const p = pts[i];
-        const breathe = 0.5 + 0.5 * Math.sin(p.pulse);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${p.alpha * breathe * opacity})`;
-        ctx.fill();
+        const p = pts[i], breathe = 0.5+0.5*Math.sin(p.pulse);
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${p.alpha*breathe*opacity})`; ctx.fill();
       }
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -1023,23 +976,204 @@ function FinaleParticles({ active }) {
   return <canvas ref={canvasRef} className="finale-particles-canvas" aria-hidden="true" />;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  MAIN APP
-// ─────────────────────────────────────────────────────────────
+// ─── CONTACT PAGE ────────────────────────────────────────────
+function ContactPage({ onClose }) {
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [sent, setSent] = useState(false);
+  const handleSubmit = (e) => { e.preventDefault(); setSent(true); };
+
+  return (
+    <motion.div
+      className="overlay-page contact-page"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 40 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <button className="overlay-close" onClick={onClose} aria-label="Close">
+        <span /><span />
+      </button>
+      <div className="contact-inner">
+        {!sent ? (
+          <>
+            <div className="contact-header">
+              <p className="contact-eyebrow">Get in touch</p>
+              <h2 className="contact-title">Let's build<br /><em>something.</em></h2>
+              <p className="contact-subtitle">We respond within 24 hours.</p>
+            </div>
+            <form className="contact-form" onSubmit={handleSubmit}>
+              <div className="contact-field">
+                <label className="contact-label">Name</label>
+                <input className="contact-input" type="text" placeholder="Your name" required
+                  value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="contact-field">
+                <label className="contact-label">Email</label>
+                <input className="contact-input" type="email" placeholder="your@email.com" required
+                  value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="contact-field">
+                <label className="contact-label">Message</label>
+                <textarea className="contact-textarea" placeholder="Tell us about your project…" required rows={5}
+                  value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
+              </div>
+              <button className="contact-submit" type="submit">Send message</button>
+            </form>
+            <div className="contact-links">
+              <a href="mailto:hello@studio.com" className="contact-link">hello@studio.com</a>
+              <span className="contact-link-sep" />
+              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="contact-link">Twitter</a>
+              <span className="contact-link-sep" />
+              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="contact-link">Instagram</a>
+            </div>
+          </>
+        ) : (
+          <motion.div
+            className="contact-sent"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="contact-sent-mark">✓</div>
+            <h2 className="contact-sent-title">Message sent.</h2>
+            <p className="contact-sent-sub">We'll be in touch soon.</p>
+            <button className="contact-submit" style={{ marginTop: '2rem' }} onClick={onClose}>Back to site</button>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── PORTFOLIO PAGE ──────────────────────────────────────────
+const PORTFOLIO_ITEMS = [
+  { id: 1,  type: 'image', cat: 'Brand',  aspect: '4/5',  bg: '#1a1a1a', label: 'Brand Identity — Noir' },
+  { id: 2,  type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
+  { id: 3,  type: 'image', cat: 'Web',    aspect: '4/5',  bg: '#111827', label: 'Digital Platform' },
+  { id: 4,  type: 'image', cat: 'Brand',  aspect: '1/1',  bg: '#18181b', label: 'Packaging — Minimal' },
+  { id: 5,  type: 'image', cat: 'Web',    aspect: '16/9', bg: '#0f172a', label: 'Product Launch Site' },
+  { id: 6,  type: 'video', cat: 'Motion', aspect: '4/5',  bg: '#09090b', label: 'Campaign Film' },
+  { id: 7,  type: 'image', cat: 'Brand',  aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
+  { id: 8,  type: 'image', cat: 'Web',    aspect: '1/1',  bg: '#14532d', label: 'E-Commerce Experience' },
+  { id: 9,  type: 'image', cat: 'Brand',  aspect: '4/5',  bg: '#1e1b4b', label: 'Editorial — Type' },
+  { id: 10, type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0c0a09', label: 'Brand Film — Luxury' },
+  { id: 11, type: 'image', cat: 'Web',    aspect: '4/5',  bg: '#172554', label: 'App Interface' },
+  { id: 12, type: 'image', cat: 'Brand',  aspect: '1/1',  bg: '#1a0000', label: 'Poster Series' },
+];
+const FILTERS = ['All', 'Brand', 'Motion', 'Web'];
+
+function PortfolioPage({ onClose }) {
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [selected, setSelected] = useState(null);
+  const filtered = activeFilter === 'All'
+    ? PORTFOLIO_ITEMS
+    : PORTFOLIO_ITEMS.filter(p => p.cat === activeFilter);
+
+  return (
+    <motion.div
+      className="overlay-page portfolio-page"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 40 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <button className="overlay-close overlay-close--dark" onClick={onClose} aria-label="Close">
+        <span /><span />
+      </button>
+      <div className="portfolio-header">
+        <p className="portfolio-eyebrow">Selected work</p>
+        <h2 className="portfolio-title">Portfolio</h2>
+        <div className="portfolio-filters">
+          {FILTERS.map(f => (
+            <button
+              key={f}
+              className={`portfolio-filter ${activeFilter === f ? 'active' : ''}`}
+              onClick={() => setActiveFilter(f)}
+            >{f}</button>
+          ))}
+        </div>
+      </div>
+      <div className="portfolio-grid">
+        {filtered.map((item, i) => (
+          <motion.div
+            key={item.id}
+            className="portfolio-item"
+            style={{ aspectRatio: item.aspect }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: i * 0.04 }}
+            onClick={() => setSelected(item)}
+          >
+            <div className="portfolio-item-bg" style={{ background: item.bg }} />
+            {item.type === 'video' && (
+              <div className="portfolio-play">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M6 4l8 5-8 5V4z" fill="white" />
+                </svg>
+              </div>
+            )}
+            <div className="portfolio-item-info">
+              <span className="portfolio-item-cat">{item.cat}</span>
+              <span className="portfolio-item-label">{item.label}</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            className="portfolio-lightbox"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setSelected(null)}
+          >
+            <motion.div
+              className="portfolio-lightbox-inner"
+              style={{ background: selected.bg }}
+              initial={{ scale: 0.92 }} animate={{ scale: 1 }} exit={{ scale: 0.92 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              onClick={e => e.stopPropagation()}
+            >
+              {selected.type === 'video' && (
+                <div className="portfolio-lightbox-play">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M9 6l16 8-16 8V6z" fill="white" />
+                  </svg>
+                </div>
+              )}
+              <div className="portfolio-lightbox-meta">
+                <span className="portfolio-item-cat">{selected.cat}</span>
+                <span className="portfolio-lightbox-title">{selected.label}</span>
+              </div>
+              <button className="portfolio-lightbox-close" onClick={() => setSelected(null)}>✕</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────
 export default function App() {
-  const [activeZone,        setActiveZone]        = useState('cube');
-  const [loadProgress,      setLoadProgress]      = useState(0);
-  const [particlesReady,    setParticlesReady]    = useState(false);
-  const [isLoaded,          setIsLoaded]          = useState(false);
-  const [hoveredDotLabel,   setHoveredDotLabel]   = useState(null);
-  const [solidModelVisible, setSolidModelVisible] = useState(false);
-  const solidTimer       = useRef(null);
+  const [activeZone,      setActiveZone]      = useState('hero');
+  const [loadProgress,    setLoadProgress]    = useState(0);
+  const [particlesReady,  setParticlesReady]  = useState(false);
+  const [isLoaded,        setIsLoaded]        = useState(false);
+  const [hoveredDotLabel, setHoveredDotLabel] = useState(null);
+  const [activePage,      setActivePage]      = useState(null);
+  // heroLogoProgress: 0 = title visible, 1 = logo fully formed
+  const [heroLogoProgress, setHeroLogoProgress] = useState(0);
+
   const rotationVelocity = useRef({ x: 0, y: 0 });
 
-  // Loading bar
+  // 2D logo canvas: show when logo is mostly formed (heroLogoProgress > 0.6)
+  // and we're still in hero zone
+  const logoParticlesVisible = activeZone === 'hero' && heroLogoProgress > 0.6;
+
+  // Loading progress animation
   useEffect(() => {
-    let frame;
-    let current = 0;
+    let frame, current = 0;
     const target = particlesReady ? 100 : 90;
     const tick = () => {
       const speed = particlesReady ? 3 : 0.6;
@@ -1059,20 +1193,9 @@ export default function App() {
     }
   }, [particlesReady, loadProgress]);
 
-  // Show logo particles after 1.2s on zone 'model', hide when leaving
-  useEffect(() => {
-    if (activeZone === 'model') {
-      solidTimer.current = setTimeout(() => setSolidModelVisible(true), 1200);
-    } else {
-      clearTimeout(solidTimer.current);
-      setSolidModelVisible(false);
-    }
-    return () => clearTimeout(solidTimer.current);
-  }, [activeZone]);
-
   const handleParticlesReady = useCallback(() => setParticlesReady(true), []);
 
-  // Hard fallback
+  // Fallback: force ready after 6s
   useEffect(() => {
     const t = setTimeout(() => setParticlesReady(true), 6000);
     return () => clearTimeout(t);
@@ -1085,6 +1208,7 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (activePage) { if (e.key === 'Escape') setActivePage(null); return; }
       const currentIdx = ZONES.findIndex(z => z.id === activeZone);
       if (e.key === 'ArrowDown' && currentIdx < ZONES.length - 1)
         handleNavigate(currentIdx / (ZONES.length - 1) + 1 / (ZONES.length - 1));
@@ -1093,12 +1217,14 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [activeZone, handleNavigate]);
+  }, [activeZone, handleNavigate, activePage]);
 
-  const particleColor    = activeZone === 'blank' ? '#ffffff' : '#111111';
-  const isCardZone       = activeZone === 'about' || activeZone === 'skills';
-  const currentZoneTitle = ZONES.find(z => z.id === activeZone)?.title;
-  const isLight          = activeZone === 'blank';
+  const particleColor = activeZone === 'blank' ? '#ffffff' : '#111111';
+  const isCardZone    = activeZone === 'about' || activeZone === 'skills';
+  const isLight       = activeZone === 'blank';
+
+  // Hero title: visible in hero zone, unmounted as soon as PNG logo becomes visible
+  const showHeroTitle = activeZone === 'hero' && !logoParticlesVisible;
 
   return (
     <>
@@ -1106,7 +1232,14 @@ export default function App() {
         {!isLoaded && <LoadingScreen progress={loadProgress} isReady={particlesReady} />}
       </AnimatePresence>
 
-      <div style={{ height: '600vh', width: '100%' }} aria-hidden="true" />
+      {/* Overlay pages */}
+      <AnimatePresence>
+        {activePage === 'contact'   && <ContactPage   key="contact"   onClose={() => setActivePage(null)} />}
+        {activePage === 'portfolio' && <PortfolioPage key="portfolio" onClose={() => setActivePage(null)} />}
+      </AnimatePresence>
+
+      {/* Scroll spacer — 480vh for 4 zones */}
+      <div style={{ height: '480vh', width: '100%' }} aria-hidden="true" />
 
       <SiteLogo isLight={isLight} />
       <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} />
@@ -1117,16 +1250,22 @@ export default function App() {
         onDotHover={setHoveredDotLabel}
       />
 
-      {/* ── SYSTEM01 LOGO PARTICLES OVERLAY — page 2 only ───── */}
-      <LogoParticles visible={solidModelVisible} />
+      {/* 2D interactive logo particles — emerges in hero zone */}
+      <LogoParticles visible={logoParticlesVisible} />
 
-      {/* ── CARD DECK ─────────────────────────────────────────── */}
+      {/* Cinematic hero title */}
+      <CinematicHeroTitle
+        visible={showHeroTitle}
+        logoProgress={heroLogoProgress}
+      />
+
+      {/* CARD DECK (about + skills) */}
       <div
         className="card-deck-stage"
         style={{
           pointerEvents: isCardZone ? 'all' : 'none',
-          opacity:       isCardZone ? 1 : 0,
-          transition: 'opacity 0.8s ease',
+          opacity: isCardZone ? 1 : 0,
+          transition: 'opacity 0.8s ease'
         }}
       >
         <WaveDotGrid visible={isCardZone} />
@@ -1136,11 +1275,9 @@ export default function App() {
           className="glass-container card-deck-card"
           style={{ zIndex: 2 }}
           animate={
-            activeZone === 'about'
-              ? { y: '0%',    scale: 1,    opacity: 1 }
-              : activeZone === 'skills'
-              ? { y: '-112%', scale: 1,    opacity: 0 }
-              : { y: '0%',    scale: 1,    opacity: 0 }
+            activeZone === 'about'  ? { y: '0%',    scale: 1,    opacity: 1 } :
+            activeZone === 'skills' ? { y: '-112%', scale: 1,    opacity: 0 } :
+                                      { y: '0%',    scale: 1,    opacity: 0 }
           }
           transition={{ duration: 0.7, ease: [0.32, 0, 0.67, 0] }}
         >
@@ -1162,9 +1299,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 24 }}
                     animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
                     transition={{ duration: 0.9, delay: 0.5 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    {line}
-                  </motion.span>
+                  >{line}</motion.span>
                 ))}
               </div>
               <motion.p
@@ -1173,9 +1308,9 @@ export default function App() {
                 animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
                 transition={{ duration: 0.9, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
               >
-                A creative studio at the intersection of art, technology, and human
-                connection — transforming the ordinary into the extraordinary through
-                meticulous craft and a relentless pursuit of beauty.
+                A creative studio at the intersection of art, technology, and human connection
+                — transforming the ordinary into the extraordinary through meticulous craft
+                and a relentless pursuit of beauty.
               </motion.p>
               <motion.div
                 className="about-stats"
@@ -1193,9 +1328,7 @@ export default function App() {
                 ))}
               </motion.div>
             </motion.div>
-
             <div className="about-divider" />
-
             <motion.div
               className="about-right"
               animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
@@ -1215,11 +1348,9 @@ export default function App() {
           className="glass-container card-deck-card"
           style={{ zIndex: 1 }}
           animate={
-            activeZone === 'about'
-              ? { y: '5%',   scale: 0.94, opacity: 1 }
-              : activeZone === 'skills'
-              ? { y: '0%',   scale: 1,    opacity: 1 }
-              : { y: '5%',   scale: 0.94, opacity: 0 }
+            activeZone === 'about'  ? { y: '5%',  scale: 0.94, opacity: 1 } :
+            activeZone === 'skills' ? { y: '0%',  scale: 1,    opacity: 1 } :
+                                      { y: '5%',  scale: 0.94, opacity: 0 }
           }
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
@@ -1240,9 +1371,7 @@ export default function App() {
                     className={`about-title-line${i === 1 ? ' about-title-italic' : ''}`}
                     animate={activeZone === 'skills' ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.9, delay: activeZone === 'skills' ? 0.5 + i * 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    {line}
-                  </motion.span>
+                  >{line}</motion.span>
                 ))}
               </div>
               <motion.p
@@ -1250,9 +1379,8 @@ export default function App() {
                 animate={activeZone === 'skills' ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
                 transition={{ duration: 0.9, delay: activeZone === 'skills' ? 0.82 : 0, ease: [0.16, 1, 0.3, 1] }}
               >
-                Where technical precision meets creative instinct — a curated set of
-                tools and disciplines refined across three years of multidisciplinary
-                practice.
+                Where technical precision meets creative instinct — a curated set of tools
+                and disciplines refined across three years of multidisciplinary practice.
               </motion.p>
               <motion.div
                 className="about-stats"
@@ -1270,9 +1398,7 @@ export default function App() {
                 ))}
               </motion.div>
             </motion.div>
-
             <div className="about-divider" />
-
             <motion.div
               className="about-right"
               animate={activeZone === 'skills' ? { opacity: 1 } : { opacity: 0 }}
@@ -1284,7 +1410,7 @@ export default function App() {
         </motion.div>
       </div>
 
-      {/* ── FINALE ───────────────────────────────────────────── */}
+      {/* FINALE */}
       <div className={`final-content-page ${activeZone === 'blank' ? 'visible' : ''}`}>
         <FinaleParticles active={activeZone === 'blank'} />
         <motion.div
@@ -1298,8 +1424,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 1.15 }}
             animate={activeZone === 'blank' ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.15 }}
             transition={{ duration: 1.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >05</motion.div>
-
+          >04</motion.div>
           <div className="finale-center">
             <motion.div
               className="finale-eyebrow"
@@ -1311,17 +1436,14 @@ export default function App() {
               <span>The Continuum</span>
               <span className="finale-eyebrow-line" />
             </motion.div>
-
             <motion.h2
               className="finale-title"
               initial={{ opacity: 0, y: 30 }}
               animate={activeZone === 'blank' ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               transition={{ duration: 1, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
             >
-              From structure<br />
-              <span className="finale-title-italic">to blueprint.</span>
+              From structure<br /><span className="finale-title-italic">to blueprint.</span>
             </motion.h2>
-
             <motion.p
               className="finale-description"
               initial={{ opacity: 0, y: 16 }}
@@ -1331,74 +1453,47 @@ export default function App() {
               Every form begins as chaos. Every idea as noise.<br />
               What you witnessed was the process — raw to refined.
             </motion.p>
-
             <motion.div
               className="finale-cta-row"
               initial={{ opacity: 0, y: 14 }}
               animate={activeZone === 'blank' ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
               transition={{ duration: 0.8, delay: 1.25 }}
             >
-              <button className="finale-btn-primary">Start a Project</button>
-              <button className="finale-btn-ghost">View Work</button>
+              <button className="finale-btn-primary" onClick={() => setActivePage('contact')}>
+                Contact Us
+              </button>
+              <button className="finale-btn-ghost" onClick={() => setActivePage('portfolio')}>
+                Portfolio
+              </button>
             </motion.div>
           </div>
-
           <motion.div
             className="finale-timeline"
             initial={{ opacity: 0 }}
             animate={activeZone === 'blank' ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 1, delay: 1.5 }}
           >
-            {ZONES.slice(0, 4).map((zone, i) => (
+            {ZONES.slice(0, 3).map((zone, i) => (
               <React.Fragment key={zone.id}>
                 <div className="finale-timeline-item">
                   <span className="finale-timeline-num">{zone.index}</span>
                   <span className="finale-timeline-label">{zone.label}</span>
                 </div>
-                {i < 3 && <div className="finale-timeline-connector" />}
+                {i < 2 && <div className="finale-timeline-connector" />}
               </React.Fragment>
             ))}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* ── CENTER TITLE OVERLAY ─────────────────────────────── */}
-      <div className="ui-overlay">
-        <AnimatePresence mode="wait">
-          {!isCardZone && activeZone !== 'blank' && currentZoneTitle && (
-            <motion.div
-              key={activeZone}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.04 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              className="center-content"
-            >
-              <motion.div
-                className="center-eyebrow"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.6 }}
-              >
-                {ZONES.find(z => z.id === activeZone)?.index}
-              </motion.div>
-              <h1>{currentZoneTitle}</h1>
-              <motion.div
-                className="decorative-line"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
       <ZoneCounter activeZone={activeZone} isLight={isLight} />
-      <ScrollIndicator visible={activeZone === 'cube'} />
+      <ScrollIndicator visible={activeZone === 'hero' && heroLogoProgress < 0.1} />
 
-      {/* ── THREE.JS CANVAS ─────────────────────────────────── */}
-      <div className="canvas-container" style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}>
+      {/* THREE.JS CANVAS */}
+      <div
+        className="canvas-container"
+        style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}
+      >
         <Canvas
           camera={{ position: [0, 0, 5], fov: 85 }}
           frameloop="always"
@@ -1417,12 +1512,11 @@ export default function App() {
               rotationVelocity={rotationVelocity}
               particleColor={particleColor}
               onReady={handleParticlesReady}
-              solidModelVisible={solidModelVisible}
+              heroLogoProgress={heroLogoProgress}
+              setHeroLogoProgress={setHeroLogoProgress}
             />
-            <WireframeModel
-              visible={false}
-              rotationRef={rotationVelocity}
-            />
+            {/* WireframeModel: desktop only, never shown (hero logo is 2D particles) */}
+            {!isMobile && <WireframeModel visible={false} rotationRef={rotationVelocity} />}
           </Suspense>
           <ClickHandler rotationVelocity={rotationVelocity} />
           {activeZone !== 'blank' && !isMobile && (

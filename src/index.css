@@ -785,6 +785,23 @@ body * {
   font-weight: 400;
 }
 
+/* Mobile-only (page 2 / About card): bottom "Studio / 2024" tag that replaces
+   the image on phones. Hidden by default; enabled inside the mobile media query. */
+.about-mobile-tag {
+  display: none;
+}
+
+.about-mobile-tag span {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.3;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
 /* FLUID BLOB */
 .fluid-reveal-container {
   position: relative;
@@ -1135,6 +1152,74 @@ body * {
 
   .skill-category {
     font-size: 0.55rem;
+  }
+
+  /* ── ABOUT CARD MOBILE REDESIGN (page 2 only) ──────────────────
+     No portrait image on phones — content is centered and the card
+     gains a quiet "Studio / 2024" mark anchored to the bottom.
+     Scoped to .about-card so the Skills card (page 3) is untouched. */
+  .about-card .about-wrapper {
+    gap: 0;
+  }
+
+  .about-card .about-left {
+    flex: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.25rem;
+  }
+
+  .about-card .about-eyebrow {
+    justify-content: center;
+  }
+
+  .about-card .about-title-block {
+    align-items: center;
+  }
+
+  .about-card .about-title-line {
+    font-size: clamp(2.1rem, 9.5vw, 3.1rem);
+  }
+
+  .about-card .about-description {
+    border-left: none;
+    padding-left: 0;
+    text-align: center;
+    max-width: 320px;
+    margin: 0 auto;
+    font-size: 0.86rem;
+    line-height: 1.85;
+    -webkit-line-clamp: 4;
+  }
+
+  .about-card .about-stats {
+    justify-content: center;
+    gap: 1.7rem;
+  }
+
+  .about-card .stat-number {
+    font-size: 1.55rem;
+  }
+
+  .about-card .stat-label {
+    font-size: 0.56rem;
+  }
+
+  .about-card .stat-divider {
+    height: 30px;
+  }
+
+  .about-mobile-tag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    margin-top: auto;
+    padding-top: 1.5rem;
   }
 
 }

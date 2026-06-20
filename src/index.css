@@ -385,13 +385,45 @@ body * {
 }
 
 @media (hover: none) and (pointer: coarse) {
-
   /* Force scroll indicator perfectly centered on touch screens */
   .scroll-indicator {
-    bottom: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 2.2rem;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    gap: 0.5rem;
+    width: auto;
   }
+}
+
+.tap-icon {
+  color: var(--ink);
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── MOBILE LOGO (PAGE 1 PART B) ─── */
+.mobile-logo-display {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.mobile-logo-img {
+  width: 65%; /* Scaled for a premium feel */
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 1/1;
+  object-fit: contain;
+  filter: drop-shadow(0 15px 45px rgba(0,0,0,0.06));
 }
 
 /* ─────────────────────────────────────────────────────────────

@@ -295,26 +295,25 @@ function ScrollIndicator({ visible }) {
       {visible && (
         <motion.div
           className="scroll-indicator"
-          initial={{ opacity: 0, y: 10, x: '-50%' }}
-          animate={{ opacity: 1, y: 0, x: '-50%' }}
-          exit={{ opacity: 0, y: 10, x: '-50%' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
           transition={{ duration: 0.8, delay: 1 }}
-          style={{ left: '50%' }}
         >
           {isMobile ? (
             <>
               <motion.div
                 className="tap-icon"
-                animate={{ scale: [1, 0.9, 1], opacity: [0.6, 1, 0.6] }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                animate={{ scale: [1, 0.88, 1], opacity: [1, 0.45, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <path d="M12 8V12L14 14" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1" strokeDasharray="2 4" />
+                <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 2C10 2 10 8 10 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <circle cx="10" cy="16" r="5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M10 21v4M6 25h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                 </svg>
               </motion.div>
-              <span className="scroll-text" style={{ marginTop: '4px' }}>TAP TO DISCOVER</span>
+              <span className="scroll-text">TAP</span>
             </>
           ) : (
             <>

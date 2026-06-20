@@ -2,7 +2,7 @@ import React, {
   useRef, useMemo, useEffect, useState, useCallback, Suspense
 } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Points, PointMaterial, useGLTF } from '@react-three/drei';
+import { Points, PointMaterial } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -11,30 +11,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MODEL_CONFIG = { scale: 1.15, autoRotateSpeed: 0.001 };
+const MODEL_CONFIG = { autoRotateSpeed: 0.001 };
 const ROTATION_CONFIG = { friction: 0.97, clickForce: 0.05, maxVelocity: 0.15 };
 const AMBIENT_INTENSITY = 0.05;
 const isMobile = typeof window !== 'undefined' &&
   window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 // Mobile gets fewer particles for performance
-const PARTICLE_COUNT = isMobile ? 2000 : 5000;
+const PARTICLE_COUNT = isMobile ? 1000 : 1500;
 
 // ─── ZONES: cube + model merged into hero ───────────────────
 const ZONES = [
-  { id: 'hero',   index: '01', label: 'WELCOME',  title: null },
-  { id: 'about',  index: '02', label: 'ABOUT',    title: null },
-  { id: 'skills', index: '03', label: 'SKILLS',   title: null },
-  { id: 'blank',  index: '04', label: 'PORTFOLIO', title: null },
+  { id: 'hero', index: '01', label: 'WELCOME', title: null },
+  { id: 'about', index: '02', label: 'ABOUT', title: null },
+  { id: 'skills', index: '03', label: 'SKILLS', title: null },
+  { id: 'blank', index: '04', label: 'PORTFOLIO', title: null },
 ];
 const ZONE_TOTAL = ZONES.length;
 
+// Mobile sections: hero has two sub-sections (title + logo)
+const MOBILE_SECTIONS = ['hero-a', 'hero-b', 'about', 'skills', 'blank'];
+
 const CONFIG_S01 = {
   particleCount: isMobile ? 2000 : 5000,
-  particleSize:  2, logoSample: 4,
-  restoreSpeed:  0.06, friction: 0.88,
-  mouseRadius:   90, mouseForce: 18, clickForce: 60,
-  color:         '#0a0a0a',
+  particleSize: 2, logoSample: 4,
+  restoreSpeed: 0.06, friction: 0.88,
+  mouseRadius: 90, mouseForce: 18, clickForce: 60,
+  color: '#0a0a0a',
 };
 
 function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
@@ -42,6 +45,7 @@ function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      if (targetW === 0 || targetH === 0) { resolve([]); return; }
       const offscreen = document.createElement('canvas');
       offscreen.width = targetW; offscreen.height = targetH;
       const ctx = offscreen.getContext('2d');
@@ -53,8 +57,8 @@ function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
       for (let py = 0; py < targetH; py += sampleStep)
         for (let px = 0; px < targetW; px += sampleStep) {
           const idx = (py * targetW + px) * 4;
-          const brightness = (data[idx] + data[idx+1] + data[idx+2]) / 3;
-          if (data[idx+3] > 128 && brightness < 160) points.push({ x: px, y: py });
+          const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+          if (data[idx + 3] > 128 && brightness < 160) points.push({ x: px, y: py });
         }
       resolve(points);
     };
@@ -66,7 +70,7 @@ function sampleLogo(imgSrc, targetW, targetH, sampleStep) {
 // ─── LOGO PARTICLES (2D canvas, interactive) ────────────────
 function LogoParticles({ visible }) {
   const canvasRef = useRef();
-  const stateRef  = useRef({
+  const stateRef = useRef({
     particles: [], targets: [],
     mouse: { x: -9999, y: -9999 },
     isReady: false, raf: null, opacity: 0, _visible: false
@@ -112,7 +116,7 @@ function LogoParticles({ visible }) {
         const p = s.particles[i];
         p.vx += (p.tx - p.x) * CONFIG_S01.restoreSpeed;
         p.vy += (p.ty - p.y) * CONFIG_S01.restoreSpeed;
-        const mdx = p.x - mx, mdy = p.y - my, md2 = mdx*mdx + mdy*mdy;
+        const mdx = p.x - mx, mdy = p.y - my, md2 = mdx * mdx + mdy * mdy;
         if (md2 < mr2 && md2 > 0) {
           const dist = Math.sqrt(md2), force = (CONFIG_S01.mouseRadius - dist) / CONFIG_S01.mouseRadius;
           const angle = Math.atan2(mdy, mdx);
@@ -144,9 +148,9 @@ function LogoParticles({ visible }) {
     const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return;
     const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
     stateRef.current.particles.forEach((p) => {
-      const dx = p.x - cx, dy = p.y - cy, dist = Math.sqrt(dx*dx+dy*dy)||1;
-      p.vx += (dx/dist)*(CONFIG_S01.clickForce/dist);
-      p.vy += (dy/dist)*(CONFIG_S01.clickForce/dist);
+      const dx = p.x - cx, dy = p.y - cy, dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      p.vx += (dx / dist) * (CONFIG_S01.clickForce / dist);
+      p.vy += (dy / dist) * (CONFIG_S01.clickForce / dist);
     });
   }, []);
   const onTouchMove = useCallback((e) => {
@@ -284,7 +288,7 @@ function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
   );
 }
 
-// ─── SCROLL INDICATOR ────────────────────────────────────────
+// ─── SCROLL / TAP INDICATOR ──────────────────────────────────
 function ScrollIndicator({ visible }) {
   return (
     <AnimatePresence>
@@ -296,18 +300,56 @@ function ScrollIndicator({ visible }) {
           exit={{ opacity: 0, y: 10 }}
           transition={{ duration: 0.8, delay: 1 }}
         >
-          <motion.div
-            className="scroll-mouse"
-            animate={{ opacity: [1, 0.4, 1] }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-          >
-            <motion.div
-              className="scroll-wheel"
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-            />
-          </motion.div>
-          <span className="scroll-text">SCROLL</span>
+          {isMobile ? (
+            <>
+              <motion.div
+                className="tap-icon"
+                animate={{ scale: [1, 0.88, 1], opacity: [1, 0.45, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+              >
+                <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 2C10 2 10 8 10 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <circle cx="10" cy="16" r="5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M10 21v4M6 25h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+              </motion.div>
+              <span className="scroll-text">TAP</span>
+            </>
+          ) : (
+            <>
+              <motion.div
+                className="scroll-mouse"
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+              >
+                <motion.div
+                  className="scroll-wheel"
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                />
+              </motion.div>
+              <span className="scroll-text">SCROLL</span>
+            </>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── MOBILE LOGO DISPLAY (static PNG, no particles) ─────────
+function MobileLogoDisplay({ visible }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          className="mobile-logo-display"
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <img src="/logo.png" alt="Studio Logo" className="mobile-logo-img" />
         </motion.div>
       )}
     </AnimatePresence>
@@ -348,17 +390,17 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
       const o = isVisible.current ? 1 : 0;
       if (cursorInnerRef.current) {
         cursorInnerRef.current.style.left = `${innerPos.current.x}px`;
-        cursorInnerRef.current.style.top  = `${innerPos.current.y}px`;
+        cursorInnerRef.current.style.top = `${innerPos.current.y}px`;
         cursorInnerRef.current.style.opacity = o;
       }
       if (cursorOuterRef.current) {
         cursorOuterRef.current.style.left = `${outerPos.current.x}px`;
-        cursorOuterRef.current.style.top  = `${outerPos.current.y}px`;
+        cursorOuterRef.current.style.top = `${outerPos.current.y}px`;
         cursorOuterRef.current.style.opacity = o;
       }
       if (labelRef.current) {
         labelRef.current.style.left = `${outerPos.current.x + 28}px`;
-        labelRef.current.style.top  = `${outerPos.current.y}px`;
+        labelRef.current.style.top = `${outerPos.current.y}px`;
       }
       rafId.current = requestAnimationFrame(tick);
     };
@@ -418,7 +460,7 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
 function CinematicHeroTitle({ visible, logoProgress }) {
   // Stay fully visible until logo starts forming (~0.55), then fade sharply
   const fadeStart = 0.50;
-  const fadeEnd   = 0.62;
+  const fadeEnd = 0.62;
   const t = Math.max(0, Math.min(1, (logoProgress - fadeStart) / (fadeEnd - fadeStart)));
   const titleOpacity = 1 - t;
   const titleY = t * -24;
@@ -514,53 +556,44 @@ function CinematicHeroTitle({ visible, logoProgress }) {
   );
 }
 
-// ─── WIREFRAME MODEL (desktop only) ─────────────────────────
-function WireframeModel({ visible, rotationRef }) {
-  const { scene } = useGLTF('/logo2.glb');
-  const groupRef = useRef();
-  const opacityRef = useRef(0);
-
-  const clonedScene = useMemo(() => {
-    const clone = scene.clone(true);
-    clone.traverse((child) => {
-      if (child.isMesh) {
-        child.material = new THREE.MeshBasicMaterial({
-          color: 0xffffff, transparent: true, opacity: 0, depthWrite: false
-        });
-        child.scale.setScalar(MODEL_CONFIG.scale);
-        const edges = new THREE.EdgesGeometry(child.geometry, 15);
-        const lineMat = new THREE.LineBasicMaterial({
-          color: 0x0a0a0a, transparent: true, opacity: 0, linewidth: 1
-        });
-        const wireframe = new THREE.LineSegments(edges, lineMat);
-        wireframe.scale.setScalar(MODEL_CONFIG.scale);
-        wireframe.userData.isWireframe = true;
-        child.add(wireframe);
-      }
-    });
-    return clone;
-  }, [scene]);
-
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const target = visible ? 1 : 0;
-    opacityRef.current += (target - opacityRef.current) * 0.05;
-    groupRef.current.traverse((child) => {
-      if (child.isMesh && child.material) child.material.opacity = 0;
-      if (child.isLineSegments && child.userData.isWireframe && child.material)
-        child.material.opacity = opacityRef.current;
-    });
-    if (rotationRef?.current) {
-      groupRef.current.rotation.y += MODEL_CONFIG.autoRotateSpeed + rotationRef.current.y;
-      groupRef.current.rotation.x += rotationRef.current.x;
-    }
+// ─── Sample logo PNG into 3D point cloud ─────────────────────
+function sampleLogoPNG(imgSrc, count) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const W = 256, H = 256;
+      const offscreen = document.createElement('canvas');
+      offscreen.width = W; offscreen.height = H;
+      const ctx = offscreen.getContext('2d');
+      const scale = Math.min(W / img.width, H / img.height) * 0.85;
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+      const data = ctx.getImageData(0, 0, W, H).data;
+      const pts = [];
+      for (let py = 0; py < H; py += 2)
+        for (let px = 0; px < W; px += 2) {
+          const idx = (py * W + px) * 4;
+          const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+          if (data[idx + 3] > 128 && brightness < 160) {
+            // Map 2D pixel coords to 3D space centered at origin
+            const x = ((px / W) - 0.5) * 4;
+            const y = -((py / H) - 0.5) * 4;
+            const z = (Math.random() - 0.5) * 0.4;
+            pts.push({ x, y, z });
+          }
+        }
+      // Shuffle and limit to count
+      const shuffled = pts.sort(() => Math.random() - 0.5).slice(0, count);
+      resolve(shuffled);
+    };
+    img.onerror = () => resolve([]);
+    img.src = imgSrc;
   });
-
-  return <primitive ref={groupRef} object={clonedScene} />;
 }
 
 // ─── BACKGROUND PARTICLES (Three.js) ────────────────────────
-// Hero zone: early scroll = cube shape, later scroll = logo shape.
+// Hero zone: early scroll = cube shape, later scroll = logo shape (from PNG).
 // about/skills/blank = sphere scatter.
 function BackgroundParticles({
   setZone, activeZone, rotationVelocity,
@@ -571,50 +604,47 @@ function BackgroundParticles({
   const scrollProgress = useRef(0);
   const prevZone = useRef(activeZone);
   const readyFired = useRef(false);
+  const modelShapeRef = useRef(null);
 
-  const { scene } = useGLTF('/logo2.glb');
-
-  const [seedBuffer, modelShape, cubeShape] = useMemo(() => {
+  // Build initial buffers (sphere seed + cube) synchronously
+  const [seedBuffer, cubeShape] = useMemo(() => {
     const seed = new Float32Array(count * 3);
-    const m    = new Float32Array(count * 3);
-    const cb   = new Float32Array(count * 3);
-    const tempPoints = [];
-
-    scene.traverse((child) => {
-      if (child.isMesh) {
-        const positions = child.geometry.attributes.position.array;
-        const matrix = child.matrixWorld;
-        for (let i = 0; i < positions.length; i += 3) {
-          const v = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
-          v.applyMatrix4(matrix);
-          tempPoints.push(v);
-        }
-      }
-    });
-
+    const cb = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       const st = Math.random() * Math.PI * 2;
       const sp = Math.acos((Math.random() * 2) - 1);
       const sr = 2.5 + Math.random() * 0.5;
-      seed[i3]   = sr * Math.sin(sp) * Math.cos(st);
-      seed[i3+1] = sr * Math.sin(sp) * Math.sin(st);
-      seed[i3+2] = sr * Math.cos(sp);
-
-      if (tempPoints.length > 0) {
-        const rp = tempPoints[Math.floor(Math.random() * tempPoints.length)];
-        const ms = rp.clone().multiplyScalar(MODEL_CONFIG.scale);
-        m[i3] = ms.x; m[i3+1] = ms.y; m[i3+2] = ms.z;
-      } else {
-        m[i3] = seed[i3]; m[i3+1] = seed[i3+1]; m[i3+2] = seed[i3+2];
-      }
-
-      cb[i3]   = (Math.random()-0.5)*18;
-      cb[i3+1] = (Math.random()-0.5)*12;
-      cb[i3+2] = (Math.random()-0.5)*12;
+      seed[i3] = sr * Math.sin(sp) * Math.cos(st);
+      seed[i3 + 1] = sr * Math.sin(sp) * Math.sin(st);
+      seed[i3 + 2] = sr * Math.cos(sp);
+      cb[i3] = (Math.random() - 0.5) * 18;
+      cb[i3 + 1] = (Math.random() - 0.5) * 12;
+      cb[i3 + 2] = (Math.random() - 0.5) * 12;
     }
-    return [seed, m, cb];
-  }, [scene, count]);
+    return [seed, cb];
+  }, [count]);
+
+  // Load PNG logo and build model shape asynchronously
+  useEffect(() => {
+    sampleLogoPNG('/logo.png', count).then((pts) => {
+      const m = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        if (i < pts.length) {
+          m[i3] = pts[i].x;
+          m[i3 + 1] = pts[i].y;
+          m[i3 + 2] = pts[i].z;
+        } else {
+          // Fallback to sphere seed for any extra particles
+          m[i3] = seedBuffer[i3];
+          m[i3 + 1] = seedBuffer[i3 + 1];
+          m[i3 + 2] = seedBuffer[i3 + 2];
+        }
+      }
+      modelShapeRef.current = m;
+    });
+  }, [count, seedBuffer]);
 
   const onReadyRef = useRef(onReady);
   useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
@@ -640,14 +670,11 @@ function BackgroundParticles({
   useFrame(() => {
     if (!pointsRef.current) return;
     const p = scrollProgress.current;
+    const modelShape = modelShapeRef.current || seedBuffer;
 
     // ── Zone detection (4 zones, each ~25% of scroll) ──
-    // hero:   0.00 – 0.33
-    // about:  0.33 – 0.55
-    // skills: 0.55 – 0.78
-    // blank:  0.78 – 1.00
     let newZone = 'hero';
-    if      (p > 0.78) newZone = 'blank';
+    if (p > 0.78) newZone = 'blank';
     else if (p > 0.55) newZone = 'skills';
     else if (p > 0.33) newZone = 'about';
 
@@ -657,7 +684,6 @@ function BackgroundParticles({
     }
 
     // Within hero zone: first half = cube, second half morphs to logo
-    // heroLogoProgress: 0 at p=0.15, 1 at p=0.33
     const logoT = THREE.MathUtils.clamp((p - 0.15) / 0.18, 0, 1);
     setHeroLogoProgress(logoT);
 
@@ -666,13 +692,10 @@ function BackgroundParticles({
       for (let i = 0; i < count * 3; i++) {
         let target;
         if (p <= 0.15) {
-          // Cube / scattered shape — hero title phase
           target = cubeShape[i];
         } else if (p <= 0.33) {
-          // Morph to logo shape — cinematic reveal phase
           target = THREE.MathUtils.lerp(cubeShape[i], modelShape[i], logoT);
         } else {
-          // about / skills — scatter to sphere
           const scatterT = THREE.MathUtils.clamp((p - 0.33) / 0.22, 0, 1);
           target = THREE.MathUtils.lerp(modelShape[i], seedBuffer[i], scatterT);
         }
@@ -683,7 +706,6 @@ function BackgroundParticles({
 
     const mat = pointsRef.current.material;
     if (mat) {
-      // Fade out 2D logo canvas region: keep 3D particles visible throughout hero
       const targetOpacity = newZone === 'blank' ? 0 : p > 0.28 ? 0 : 0.95;
       mat.opacity += (targetOpacity - mat.opacity) * 0.04;
     }
@@ -732,9 +754,9 @@ function ClickHandler({ rotationVelocity }) {
       }
     };
     const mDown = (e) => onDown(e.clientX, e.clientY);
-    const mUp   = (e) => onUp(e.clientX, e.clientY);
+    const mUp = (e) => onUp(e.clientX, e.clientY);
     const tStart = (e) => onDown(e.touches[0].clientX, e.touches[0].clientY);
-    const tEnd   = (e) => onUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    const tEnd = (e) => onUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
     window.addEventListener('mousedown', mDown);
     window.addEventListener('mouseup', mUp);
     window.addEventListener('touchstart', tStart, { passive: true });
@@ -847,7 +869,7 @@ function WaveDotGrid({ visible }) {
           const bx = c * SPACING, by = r * SPACING;
           const w1 = Math.sin(bx * FREQ + t) * AMPLITUDE;
           const w2 = Math.cos(by * FREQ * 0.8 + t * 0.7) * AMPLITUDE * 0.6;
-          const d  = Math.sin((bx + by) * FREQ * 0.5 + t * 1.2) * AMPLITUDE * 0.4;
+          const d = Math.sin((bx + by) * FREQ * 0.5 + t * 1.2) * AMPLITUDE * 0.4;
           const x = bx + w1 + d, y = by + w2 + d;
           const phase = Math.sin(bx * FREQ * 1.5 + by * FREQ + t * 1.1);
           const r2 = DOT_R * (0.55 + 0.45 * ((phase + 1) / 2));
@@ -866,9 +888,9 @@ function WaveDotGrid({ visible }) {
 
 // ─── SKILLS GRID ─────────────────────────────────────────────
 const SKILL_ITEMS = [
-  { category: 'Design',   items: ['Figma', 'After Effects', 'Cinema 4D', 'Blender'] },
+  { category: 'Design', items: ['Figma', 'After Effects', 'Cinema 4D', 'Blender'] },
   { category: 'Frontend', items: ['React', 'Three.js', 'GSAP', 'WebGL'] },
-  { category: 'Backend',  items: ['Node.js', 'GraphQL', 'PostgreSQL', 'Redis'] },
+  { category: 'Backend', items: ['Node.js', 'GraphQL', 'PostgreSQL', 'Redis'] },
   { category: 'Creative', items: ['Direction', 'Branding', 'Motion', 'Strategy'] },
 ];
 
@@ -909,18 +931,18 @@ const FINALE_COUNT = 80, LINK_DIST = 100, CELL_SIZE = LINK_DIST;
 function FinaleParticles({ active }) {
   const canvasRef = useRef(); const rafRef = useRef();
   const activeRef = useRef(active);
-  const stateRef  = useRef({ particles: [], W: 0, H: 0, opacity: 0 });
+  const stateRef = useRef({ particles: [], W: 0, H: 0, opacity: 0 });
   useEffect(() => { activeRef.current = active; }, [active]);
 
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const spawn = (W, H) => Array.from({ length: FINALE_COUNT }, () => ({
-      x: Math.random()*W, y: Math.random()*H,
-      r: 0.9+Math.random()*1.4,
-      vx: (Math.random()-0.5)*0.15, vy: (Math.random()-0.5)*0.10,
-      alpha: 0.15+Math.random()*0.4,
-      pulse: Math.random()*Math.PI*2, pulseSpeed: 0.007+Math.random()*0.01
+      x: Math.random() * W, y: Math.random() * H,
+      r: 0.9 + Math.random() * 1.4,
+      vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.10,
+      alpha: 0.15 + Math.random() * 0.4,
+      pulse: Math.random() * Math.PI * 2, pulseSpeed: 0.007 + Math.random() * 0.01
     }));
     const resize = () => {
       const W = canvas.width = window.innerWidth, H = canvas.height = window.innerHeight;
@@ -934,38 +956,38 @@ function FinaleParticles({ active }) {
       if (s.opacity < 0.005) { rafRef.current = requestAnimationFrame(draw); return; }
       ctx.clearRect(0, 0, s.W, s.H);
       const { particles: pts, W, H, opacity } = s;
-      const cols = Math.ceil(W/CELL_SIZE)+1, rows = Math.ceil(H/CELL_SIZE)+1;
-      const grid = new Array(cols*rows);
+      const cols = Math.ceil(W / CELL_SIZE) + 1, rows = Math.ceil(H / CELL_SIZE) + 1;
+      const grid = new Array(cols * rows);
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i]; p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
-        if (p.x < -10) p.x = W+10; if (p.x > W+10) p.x = -10;
-        if (p.y < -10) p.y = H+10; if (p.y > H+10) p.y = -10;
-        const cx = Math.floor(p.x/CELL_SIZE), cy = Math.floor(p.y/CELL_SIZE), key = cy*cols+cx;
+        if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;
+        if (p.y < -10) p.y = H + 10; if (p.y > H + 10) p.y = -10;
+        const cx = Math.floor(p.x / CELL_SIZE), cy = Math.floor(p.y / CELL_SIZE), key = cy * cols + cx;
         if (!grid[key]) grid[key] = []; grid[key].push(i);
       }
       ctx.lineWidth = 0.5;
       for (let i = 0; i < pts.length; i++) {
         const a = pts[i];
-        const cx = Math.floor(a.x/CELL_SIZE), cy = Math.floor(a.y/CELL_SIZE);
+        const cx = Math.floor(a.x / CELL_SIZE), cy = Math.floor(a.y / CELL_SIZE);
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-          const nx = cx+dx, ny = cy+dy;
-          if (nx<0||ny<0||nx>=cols||ny>=rows) continue;
-          const cell = grid[ny*cols+nx]; if (!cell) continue;
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+          const cell = grid[ny * cols + nx]; if (!cell) continue;
           for (let k = 0; k < cell.length; k++) {
             const j = cell[k]; if (j <= i) continue;
-            const b = pts[j], dist = Math.hypot(a.x-b.x, a.y-b.y);
+            const b = pts[j], dist = Math.hypot(a.x - b.x, a.y - b.y);
             if (dist < LINK_DIST) {
-              ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
-              ctx.strokeStyle = `rgba(255,255,255,${(1-dist/LINK_DIST)*0.07*opacity})`;
+              ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+              ctx.strokeStyle = `rgba(255,255,255,${(1 - dist / LINK_DIST) * 0.07 * opacity})`;
               ctx.stroke();
             }
           }
         }
       }
       for (let i = 0; i < pts.length; i++) {
-        const p = pts[i], breathe = 0.5+0.5*Math.sin(p.pulse);
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle = `rgba(255,255,255,${p.alpha*breathe*opacity})`; ctx.fill();
+        const p = pts[i], breathe = 0.5 + 0.5 * Math.sin(p.pulse);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${p.alpha * breathe * opacity})`; ctx.fill();
       }
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -1047,18 +1069,18 @@ function ContactPage({ onClose }) {
 
 // ─── PORTFOLIO PAGE ──────────────────────────────────────────
 const PORTFOLIO_ITEMS = [
-  { id: 1,  type: 'image', cat: 'Brand',  aspect: '4/5',  bg: '#1a1a1a', label: 'Brand Identity — Noir' },
-  { id: 2,  type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
-  { id: 3,  type: 'image', cat: 'Web',    aspect: '4/5',  bg: '#111827', label: 'Digital Platform' },
-  { id: 4,  type: 'image', cat: 'Brand',  aspect: '1/1',  bg: '#18181b', label: 'Packaging — Minimal' },
-  { id: 5,  type: 'image', cat: 'Web',    aspect: '16/9', bg: '#0f172a', label: 'Product Launch Site' },
-  { id: 6,  type: 'video', cat: 'Motion', aspect: '4/5',  bg: '#09090b', label: 'Campaign Film' },
-  { id: 7,  type: 'image', cat: 'Brand',  aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
-  { id: 8,  type: 'image', cat: 'Web',    aspect: '1/1',  bg: '#14532d', label: 'E-Commerce Experience' },
-  { id: 9,  type: 'image', cat: 'Brand',  aspect: '4/5',  bg: '#1e1b4b', label: 'Editorial — Type' },
+  { id: 1, type: 'image', cat: 'Brand', aspect: '4/5', bg: '#1a1a1a', label: 'Brand Identity — Noir' },
+  { id: 2, type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
+  { id: 3, type: 'image', cat: 'Web', aspect: '4/5', bg: '#111827', label: 'Digital Platform' },
+  { id: 4, type: 'image', cat: 'Brand', aspect: '1/1', bg: '#18181b', label: 'Packaging — Minimal' },
+  { id: 5, type: 'image', cat: 'Web', aspect: '16/9', bg: '#0f172a', label: 'Product Launch Site' },
+  { id: 6, type: 'video', cat: 'Motion', aspect: '4/5', bg: '#09090b', label: 'Campaign Film' },
+  { id: 7, type: 'image', cat: 'Brand', aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
+  { id: 8, type: 'image', cat: 'Web', aspect: '1/1', bg: '#14532d', label: 'E-Commerce Experience' },
+  { id: 9, type: 'image', cat: 'Brand', aspect: '4/5', bg: '#1e1b4b', label: 'Editorial — Type' },
   { id: 10, type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0c0a09', label: 'Brand Film — Luxury' },
-  { id: 11, type: 'image', cat: 'Web',    aspect: '4/5',  bg: '#172554', label: 'App Interface' },
-  { id: 12, type: 'image', cat: 'Brand',  aspect: '1/1',  bg: '#1a0000', label: 'Poster Series' },
+  { id: 11, type: 'image', cat: 'Web', aspect: '4/5', bg: '#172554', label: 'App Interface' },
+  { id: 12, type: 'image', cat: 'Brand', aspect: '1/1', bg: '#1a0000', label: 'Poster Series' },
 ];
 const FILTERS = ['All', 'Brand', 'Motion', 'Web'];
 
@@ -1156,20 +1178,89 @@ function PortfolioPage({ onClose }) {
 
 // ─── MAIN APP ────────────────────────────────────────────────
 export default function App() {
-  const [activeZone,      setActiveZone]      = useState('hero');
-  const [loadProgress,    setLoadProgress]    = useState(0);
-  const [particlesReady,  setParticlesReady]  = useState(false);
-  const [isLoaded,        setIsLoaded]        = useState(false);
+  const [activeZone, setActiveZone] = useState('hero');
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [particlesReady, setParticlesReady] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredDotLabel, setHoveredDotLabel] = useState(null);
-  const [activePage,      setActivePage]      = useState(null);
+  const [activePage, setActivePage] = useState(null);
   // heroLogoProgress: 0 = title visible, 1 = logo fully formed
   const [heroLogoProgress, setHeroLogoProgress] = useState(0);
 
+  // Mobile: section-based navigation (tap to advance)
+  const [mobileSection, setMobileSection] = useState(0);
+
   const rotationVelocity = useRef({ x: 0, y: 0 });
 
-  // 2D logo canvas: show when logo is mostly formed (heroLogoProgress > 0.6)
-  // and we're still in hero zone
-  const logoParticlesVisible = activeZone === 'hero' && heroLogoProgress > 0.6;
+  // 2D logo canvas: show on desktop only when logo is mostly formed
+  const logoParticlesVisible = !isMobile && activeZone === 'hero' && heroLogoProgress > 0.6;
+
+  // Mobile: show static PNG logo for hero-b section
+  const showMobileLogo = isMobile && activeZone === 'hero' && mobileSection === 1;
+
+  // ─── MOBILE: lock body scroll, manage sections via tap ─────
+  useEffect(() => {
+    if (!isMobile) return;
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+  }, []);
+
+  // Mobile: sync mobileSection → activeZone + heroLogoProgress
+  useEffect(() => {
+    if (!isMobile) return;
+    const section = MOBILE_SECTIONS[mobileSection];
+    switch (section) {
+      case 'hero-a':
+        setActiveZone('hero');
+        setHeroLogoProgress(0);
+        break;
+      case 'hero-b':
+        setActiveZone('hero');
+        setHeroLogoProgress(1);
+        break;
+      case 'about':
+        setActiveZone('about');
+        setHeroLogoProgress(1);
+        break;
+      case 'skills':
+        setActiveZone('skills');
+        setHeroLogoProgress(1);
+        break;
+      case 'blank':
+        setActiveZone('blank');
+        setHeroLogoProgress(1);
+        break;
+      default:
+        break;
+    }
+  }, [mobileSection]);
+
+  // Mobile: tap to advance section
+  useEffect(() => {
+    if (!isMobile) return;
+    const handleTap = (e) => {
+      // Skip if tapping interactive elements, overlays, or buttons
+      if (e.target.closest('.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost')) return;
+      // Skip if an overlay page is open
+      if (document.querySelector('.overlay-page')) return;
+      setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+    };
+    document.addEventListener('click', handleTap);
+    return () => document.removeEventListener('click', handleTap);
+  }, []);
+
+  // Mobile: force particles ready immediately (no 3D canvas)
+  useEffect(() => {
+    if (isMobile) setParticlesReady(true);
+  }, []);
 
   // Loading progress animation
   useEffect(() => {
@@ -1201,30 +1292,50 @@ export default function App() {
     return () => clearTimeout(t);
   }, []);
 
+  // Navigation handler: mobile = set section, desktop = scroll
   const handleNavigate = useCallback((progress) => {
-    const totalHeight = document.body.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: totalHeight * progress, behavior: 'smooth' });
+    if (isMobile) {
+      const zoneIndex = Math.round(progress * (ZONES.length - 1));
+      // Map zone index → mobile section index
+      const sectionMap = [0, 2, 3, 4]; // hero-a, about, skills, blank
+      setMobileSection(sectionMap[zoneIndex] ?? 0);
+    } else {
+      const totalHeight = document.body.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: totalHeight * progress, behavior: 'smooth' });
+    }
   }, []);
 
   useEffect(() => {
     const onKey = (e) => {
       if (activePage) { if (e.key === 'Escape') setActivePage(null); return; }
-      const currentIdx = ZONES.findIndex(z => z.id === activeZone);
-      if (e.key === 'ArrowDown' && currentIdx < ZONES.length - 1)
-        handleNavigate(currentIdx / (ZONES.length - 1) + 1 / (ZONES.length - 1));
-      if (e.key === 'ArrowUp' && currentIdx > 0)
-        handleNavigate((currentIdx - 1) / (ZONES.length - 1));
+      if (isMobile) {
+        if (e.key === 'ArrowDown') setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+        if (e.key === 'ArrowUp') setMobileSection(prev => Math.max(prev - 1, 0));
+      } else {
+        const currentIdx = ZONES.findIndex(z => z.id === activeZone);
+        if (e.key === 'ArrowDown' && currentIdx < ZONES.length - 1)
+          handleNavigate(currentIdx / (ZONES.length - 1) + 1 / (ZONES.length - 1));
+        if (e.key === 'ArrowUp' && currentIdx > 0)
+          handleNavigate((currentIdx - 1) / (ZONES.length - 1));
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [activeZone, handleNavigate, activePage]);
 
   const particleColor = activeZone === 'blank' ? '#ffffff' : '#111111';
-  const isCardZone    = activeZone === 'about' || activeZone === 'skills';
-  const isLight       = activeZone === 'blank';
+  const isCardZone = activeZone === 'about' || activeZone === 'skills';
+  const isLight = activeZone === 'blank';
 
-  // Hero title: visible in hero zone, unmounted as soon as PNG logo becomes visible
-  const showHeroTitle = activeZone === 'hero' && !logoParticlesVisible;
+  // Hero title: visible in hero zone part A
+  const showHeroTitle = isMobile
+    ? (activeZone === 'hero' && mobileSection === 0)
+    : (activeZone === 'hero' && !logoParticlesVisible);
+
+  // Mobile: show tap indicator on hero-a, show scroll indicator on desktop hero
+  const showIndicator = isMobile
+    ? (mobileSection === 0 && isLoaded)
+    : (activeZone === 'hero' && heroLogoProgress < 0.1);
 
   return (
     <>
@@ -1234,12 +1345,12 @@ export default function App() {
 
       {/* Overlay pages */}
       <AnimatePresence>
-        {activePage === 'contact'   && <ContactPage   key="contact"   onClose={() => setActivePage(null)} />}
+        {activePage === 'contact' && <ContactPage key="contact" onClose={() => setActivePage(null)} />}
         {activePage === 'portfolio' && <PortfolioPage key="portfolio" onClose={() => setActivePage(null)} />}
       </AnimatePresence>
 
-      {/* Scroll spacer — 480vh for 4 zones */}
-      <div style={{ height: '480vh', width: '100%' }} aria-hidden="true" />
+      {/* Scroll spacer — desktop only, 640vh for smoother transitions */}
+      {!isMobile && <div style={{ height: '640vh', width: '100%' }} aria-hidden="true" />}
 
       <SiteLogo isLight={isLight} />
       <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} />
@@ -1250,8 +1361,11 @@ export default function App() {
         onDotHover={setHoveredDotLabel}
       />
 
-      {/* 2D interactive logo particles — emerges in hero zone */}
-      <LogoParticles visible={logoParticlesVisible} />
+      {/* 2D interactive logo particles — desktop only */}
+      {!isMobile && <LogoParticles visible={logoParticlesVisible} />}
+
+      {/* Mobile: static PNG logo for hero part B */}
+      {isMobile && <MobileLogoDisplay visible={showMobileLogo} />}
 
       {/* Cinematic hero title */}
       <CinematicHeroTitle
@@ -1275,9 +1389,9 @@ export default function App() {
           className="glass-container card-deck-card"
           style={{ zIndex: 2 }}
           animate={
-            activeZone === 'about'  ? { y: '0%',    scale: 1,    opacity: 1 } :
-            activeZone === 'skills' ? { y: '-112%', scale: 1,    opacity: 0 } :
-                                      { y: '0%',    scale: 1,    opacity: 0 }
+            activeZone === 'about' ? { y: '0%', scale: 1, opacity: 1 } :
+              activeZone === 'skills' ? { y: '-112%', scale: 1, opacity: 0 } :
+                { y: '0%', scale: 1, opacity: 0 }
           }
           transition={{ duration: 0.7, ease: [0.32, 0, 0.67, 0] }}
         >
@@ -1348,9 +1462,9 @@ export default function App() {
           className="glass-container card-deck-card"
           style={{ zIndex: 1 }}
           animate={
-            activeZone === 'about'  ? { y: '5%',  scale: 0.94, opacity: 1 } :
-            activeZone === 'skills' ? { y: '0%',  scale: 1,    opacity: 1 } :
-                                      { y: '5%',  scale: 0.94, opacity: 0 }
+            activeZone === 'about' ? { y: '5%', scale: 0.94, opacity: 1 } :
+              activeZone === 'skills' ? { y: '0%', scale: 1, opacity: 1 } :
+                { y: '5%', scale: 0.94, opacity: 0 }
           }
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
@@ -1487,46 +1601,46 @@ export default function App() {
       </div>
 
       <ZoneCounter activeZone={activeZone} isLight={isLight} />
-      <ScrollIndicator visible={activeZone === 'hero' && heroLogoProgress < 0.1} />
+      <ScrollIndicator visible={showIndicator} />
 
-      {/* THREE.JS CANVAS */}
-      <div
-        className="canvas-container"
-        style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}
-      >
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: 85 }}
-          frameloop="always"
-          gl={{ antialias: !isMobile, powerPreference: 'high-performance' }}
-          dpr={isMobile ? 1 : Math.min(window.devicePixelRatio, 2)}
+      {/* THREE.JS CANVAS — desktop only */}
+      {!isMobile && (
+        <div
+          className="canvas-container"
+          style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}
         >
-          <color attach="background" args={['#ffffff']} />
-          <ambientLight intensity={AMBIENT_INTENSITY} />
-          <directionalLight position={[8, 10, 5]}  intensity={3.5} color="#ffffff" />
-          <directionalLight position={[-6, -4, -4]} intensity={1.2} color="#c8d8ff" />
-          <pointLight        position={[0, 6, 4]}   intensity={2.0} color="#ffffff" />
-          <Suspense fallback={null}>
-            <BackgroundParticles
-              setZone={setActiveZone}
-              activeZone={activeZone}
-              rotationVelocity={rotationVelocity}
-              particleColor={particleColor}
-              onReady={handleParticlesReady}
-              heroLogoProgress={heroLogoProgress}
-              setHeroLogoProgress={setHeroLogoProgress}
-            />
-            {/* WireframeModel: desktop only, never shown (hero logo is 2D particles) */}
-            {!isMobile && <WireframeModel visible={false} rotationRef={rotationVelocity} />}
-          </Suspense>
-          <ClickHandler rotationVelocity={rotationVelocity} />
-          {activeZone !== 'blank' && !isMobile && (
-            <EffectComposer>
-              <Bloom intensity={0.35} luminanceThreshold={0.88} mipmapBlur />
-              <Vignette darkness={0.45} offset={0.28} />
-            </EffectComposer>
-          )}
-        </Canvas>
-      </div>
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: 85 }}
+            frameloop="always"
+            gl={{ antialias: true, powerPreference: 'high-performance' }}
+            dpr={Math.min(window.devicePixelRatio, 2)}
+          >
+            <color attach="background" args={['#ffffff']} />
+            <ambientLight intensity={AMBIENT_INTENSITY} />
+            <directionalLight position={[8, 10, 5]} intensity={3.5} color="#ffffff" />
+            <directionalLight position={[-6, -4, -4]} intensity={1.2} color="#c8d8ff" />
+            <pointLight position={[0, 6, 4]} intensity={2.0} color="#ffffff" />
+            <Suspense fallback={null}>
+              <BackgroundParticles
+                setZone={setActiveZone}
+                activeZone={activeZone}
+                rotationVelocity={rotationVelocity}
+                particleColor={particleColor}
+                onReady={handleParticlesReady}
+                heroLogoProgress={heroLogoProgress}
+                setHeroLogoProgress={setHeroLogoProgress}
+              />
+            </Suspense>
+            <ClickHandler rotationVelocity={rotationVelocity} />
+            {activeZone !== 'blank' && (
+              <EffectComposer>
+                <Bloom intensity={0.35} luminanceThreshold={0.88} mipmapBlur />
+                <Vignette darkness={0.45} offset={0.28} />
+              </EffectComposer>
+            )}
+          </Canvas>
+        </div>
+      )}
     </>
   );
 }

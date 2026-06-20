@@ -1190,6 +1190,28 @@ export default function App() {
   // Mobile: section-based navigation (tap to advance)
   const [mobileSection, setMobileSection] = useState(0);
 
+  // ── Phone-width detection (page 2 / About card image only) ──
+  // This is intentionally a real viewport-width check (matches the
+  // 768px breakpoint used throughout index.css for the card layout)
+  // rather than the touch/pointer-based `isMobile` flag above. That
+  // keeps the About card's "remove the image, center the text" rule
+  // guaranteed-correct on every phone (iPhone 11/13, Android, etc.)
+  // regardless of how pointer-type detection resolves on a given
+  // browser/device. It's reactive so it also updates on rotation.
+  const [isPhoneWidth, setIsPhoneWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  );
+  useEffect(() => {
+    const checkWidth = () => setIsPhoneWidth(window.innerWidth <= 768);
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    window.addEventListener('orientationchange', checkWidth);
+    return () => {
+      window.removeEventListener('resize', checkWidth);
+      window.removeEventListener('orientationchange', checkWidth);
+    };
+  }, []);
+
   const rotationVelocity = useRef({ x: 0, y: 0 });
 
   // 2D logo canvas: show on desktop only when logo is mostly formed
@@ -1386,7 +1408,7 @@ export default function App() {
 
         {/* ABOUT CARD */}
         <motion.div
-          className="glass-container card-deck-card"
+          className="glass-container card-deck-card about-card"
           style={{ zIndex: 2 }}
           animate={
             activeZone === 'about' ? { y: '0%', scale: 1, opacity: 1 } :
@@ -1442,24 +1464,40 @@ export default function App() {
                 ))}
               </motion.div>
             </motion.div>
-            <div className="about-divider" />
-            <motion.div
-              className="about-right"
-              animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ duration: 1.1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <div className="about-image-frame">
-                <div className="image-border-offset" />
-                <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
-                <div className="image-caption-tag"><span>Studio / 2024</span></div>
-              </div>
-            </motion.div>
+            {!isPhoneWidth && (
+              <>
+                <div className="about-divider" />
+                <motion.div
+                  className="about-right"
+                  animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
+                  transition={{ duration: 1.1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="about-image-frame">
+                    <div className="image-border-offset" />
+                    <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
+                    <div className="image-caption-tag"><span>Studio / 2024</span></div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+
+            {/* Phone widths only (page 2): image removed entirely, text centered, bottom tag shown */}
+            {isPhoneWidth && (
+              <motion.div
+                className="about-mobile-tag"
+                animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 0.9, delay: 1.15 }}
+              >
+                <span>Studio</span>
+                <span>/ 2024</span>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 
         {/* SKILLS CARD */}
         <motion.div
-          className="glass-container card-deck-card"
+          className="glass-container card-deck-card skills-card"
           style={{ zIndex: 1 }}
           animate={
             activeZone === 'about' ? { y: '5%', scale: 0.94, opacity: 1 } :

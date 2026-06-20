@@ -1157,7 +1157,16 @@ body * {
   /* ── ABOUT CARD MOBILE REDESIGN (page 2 only) ──────────────────
      No portrait image on phones — content is centered and the card
      gains a quiet "Studio / 2024" mark anchored to the bottom.
-     Scoped to .about-card so the Skills card (page 3) is untouched. */
+     Scoped to .about-card so the Skills card (page 3) is untouched.
+     IMPORTANT: this is a pure viewport-width rule (max-width: 768px),
+     not dependent on touch/pointer detection — so it is guaranteed to
+     hide the image on every phone (iPhone, Android, etc.) regardless
+     of how any JS device-detection flag resolves. */
+  .about-card .about-right,
+  .about-card .about-divider {
+    display: none !important;
+  }
+
   .about-card .about-wrapper {
     gap: 0;
   }

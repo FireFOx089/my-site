@@ -1069,27 +1069,77 @@ function ContactPage({ onClose }) {
 
 // ─── PORTFOLIO PAGE ──────────────────────────────────────────
 const PORTFOLIO_ITEMS = [
-  { id: 1, type: 'image', cat: 'Brand', aspect: '4/5', bg: '#1a1a1a', label: 'Brand Identity — Noir' },
-  { id: 2, type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
-  { id: 3, type: 'image', cat: 'Web', aspect: '4/5', bg: '#111827', label: 'Digital Platform' },
-  { id: 4, type: 'image', cat: 'Brand', aspect: '1/1', bg: '#18181b', label: 'Packaging — Minimal' },
-  { id: 5, type: 'image', cat: 'Web', aspect: '16/9', bg: '#0f172a', label: 'Product Launch Site' },
-  { id: 6, type: 'video', cat: 'Motion', aspect: '4/5', bg: '#09090b', label: 'Campaign Film' },
-  { id: 7, type: 'image', cat: 'Brand', aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
-  { id: 8, type: 'image', cat: 'Web', aspect: '1/1', bg: '#14532d', label: 'E-Commerce Experience' },
-  { id: 9, type: 'image', cat: 'Brand', aspect: '4/5', bg: '#1e1b4b', label: 'Editorial — Type' },
-  { id: 10, type: 'video', cat: 'Motion', aspect: '16/9', bg: '#0c0a09', label: 'Brand Film — Luxury' },
-  { id: 11, type: 'image', cat: 'Web', aspect: '4/5', bg: '#172554', label: 'App Interface' },
-  { id: 12, type: 'image', cat: 'Brand', aspect: '1/1', bg: '#1a0000', label: 'Poster Series' },
+  { id: 1, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#1a1a1a', label: 'Brand Identity — Noir' },
+  { id: 2, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
+  {
+    id: 3,
+    type: 'image',
+    cat: 'Architecture',
+    aspect: '3/2',
+    bg: '#111827',
+    label: 'Container Shop — Architecture Render',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058391/54682_1_dmxunl.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058391/54682_1_dmxunl.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058341/Container_shop_clayrender_fnlpyk.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058339/Container_shop_03_ae20ma.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058338/Container_shop_m99asc.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058348/Container_shop_02_efpb0d.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058341/Container_shop_01_b3ixlf.png',
+    ],
+  },
+  { id: 4, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#18181b', label: 'Packaging — Minimal' },
+  { id: 5, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0f172a', label: 'Product Launch Site' },
+  { id: 6, type: 'video', cat: 'Visualization', aspect: '4/5', bg: '#09090b', label: 'Campaign Film' },
+  { id: 7, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
+  { id: 8, type: 'image', cat: 'Architecture', aspect: '1/1', bg: '#14532d', label: 'E-Commerce Experience' },
+  { id: 9, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#1e1b4b', label: 'Editorial — Type' },
+  { id: 10, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0c0a09', label: 'Brand Film — Luxury' },
+  { id: 11, type: 'image', cat: 'Architecture', aspect: '4/5', bg: '#172554', label: 'App Interface' },
+  { id: 12, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#1a0000', label: 'Poster Series' },
 ];
-const FILTERS = ['All', 'Brand', 'Motion', 'Web'];
+const FILTERS = ['All', 'Product Visuals', 'Architecture', 'Visualization'];
 
 function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selected, setSelected] = useState(null);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const touchStartX = useRef(null);
   const filtered = activeFilter === 'All'
     ? PORTFOLIO_ITEMS
     : PORTFOLIO_ITEMS.filter(p => p.cat === activeFilter);
+
+  const gallery = selected?.images && selected.images.length > 1 ? selected.images : null;
+
+  const openItem = (item) => {
+    setSelected(item);
+    setSlideIndex(0);
+  };
+
+  const goToSlide = useCallback((next) => {
+    if (!gallery) return;
+    setSlideIndex(i => (i + next + gallery.length) % gallery.length);
+  }, [gallery]);
+
+  // Keyboard nav for the lightbox: ← / → to switch images, Esc to close
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setSelected(null);
+      else if (e.key === 'ArrowRight') goToSlide(1);
+      else if (e.key === 'ArrowLeft') goToSlide(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected, goToSlide]);
+
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 40) goToSlide(delta < 0 ? 1 : -1);
+    touchStartX.current = null;
+  };
 
   return (
     <motion.div
@@ -1124,14 +1174,31 @@ function PortfolioPage({ onClose }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: i * 0.04 }}
-            onClick={() => setSelected(item)}
+            onClick={() => openItem(item)}
           >
             <div className="portfolio-item-bg" style={{ background: item.bg }} />
+            {item.img && (
+              <img
+                className="portfolio-item-img"
+                src={item.img}
+                alt={item.label}
+                loading="lazy"
+              />
+            )}
             {item.type === 'video' && (
               <div className="portfolio-play">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M6 4l8 5-8 5V4z" fill="white" />
                 </svg>
+              </div>
+            )}
+            {item.images && item.images.length > 1 && (
+              <div className="portfolio-gallery-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="14" height="14" rx="2" stroke="white" strokeWidth="1.6" />
+                  <rect x="7" y="7" width="14" height="14" rx="2" fill="#111" stroke="white" strokeWidth="1.6" />
+                </svg>
+                <span>{item.images.length}</span>
               </div>
             )}
             <div className="portfolio-item-info">
@@ -1151,12 +1218,71 @@ function PortfolioPage({ onClose }) {
           >
             <motion.div
               className="portfolio-lightbox-inner"
-              style={{ background: selected.bg }}
+              style={{ background: selected.bg, aspectRatio: selected.aspect }}
               initial={{ scale: 0.92 }} animate={{ scale: 1 }} exit={{ scale: 0.92 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               onClick={e => e.stopPropagation()}
+              onTouchStart={gallery ? onTouchStart : undefined}
+              onTouchEnd={gallery ? onTouchEnd : undefined}
             >
-              {selected.type === 'video' && (
+              {gallery ? (
+                <>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.img
+                      key={slideIndex}
+                      className="portfolio-lightbox-img"
+                      src={gallery[slideIndex]}
+                      alt={`${selected.label} — variation ${slideIndex + 1}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  </AnimatePresence>
+                  <div className="portfolio-lightbox-gradient" />
+                  <button
+                    className="lightbox-nav lightbox-nav--prev"
+                    onClick={(e) => { e.stopPropagation(); goToSlide(-1); }}
+                    aria-label="Previous variation"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 2L4 8l6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <button
+                    className="lightbox-nav lightbox-nav--next"
+                    onClick={(e) => { e.stopPropagation(); goToSlide(1); }}
+                    aria-label="Next variation"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 2l6 6-6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <div className="lightbox-counter">{slideIndex + 1} / {gallery.length}</div>
+                  <div className="lightbox-dots" onClick={e => e.stopPropagation()}>
+                    {gallery.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`lightbox-dot ${i === slideIndex ? 'active' : ''}`}
+                        onClick={() => setSlideIndex(i)}
+                        aria-label={`Go to variation ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {selected.img && (
+                    <img
+                      className="portfolio-lightbox-img"
+                      src={selected.img}
+                      alt={selected.label}
+                    />
+                  )}
+                  <div className="portfolio-lightbox-gradient" />
+                </>
+              )}
+              {selected.type === 'video' && !gallery && (
                 <div className="portfolio-lightbox-play">
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                     <path d="M9 6l16 8-16 8V6z" fill="white" />

@@ -1228,41 +1228,21 @@ const FILTERS = ['All', 'Product Visuals', 'Architecture', 'Visualization'];
 function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selected, setSelected] = useState(null);
-  const [slideIndex, setSlideIndex] = useState(0);
   const [hoveredId, setHoveredId] = useState(null);
-  const touchStartX = useRef(null);
   const filtered = activeFilter === 'All'
     ? PORTFOLIO_ITEMS
     : PORTFOLIO_ITEMS.filter(p => p.cat === activeFilter);
 
   const gallery = selected?.images && selected.images.length > 1 ? selected.images : null;
 
-  const openItem = (item) => { setSelected(item); setSlideIndex(0); };
-
-  const goToSlide = useCallback((next) => {
-    if (!gallery) return;
-    setSlideIndex(i => (i + next + gallery.length) % gallery.length);
-  }, [gallery]);
+  const openItem = (item) => { setSelected(item); };
 
   useEffect(() => {
     if (!selected) return;
-    const onKey = (e) => {
-      if (e.key === 'Escape') setSelected(null);
-      else if (e.key === 'ArrowRight') goToSlide(1);
-      else if (e.key === 'ArrowLeft') goToSlide(-1);
-    };
+    const onKey = (e) => { if (e.key === 'Escape') setSelected(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected, goToSlide]);
-
-  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(delta) > 40) goToSlide(delta < 0 ? 1 : -1);
-    touchStartX.current = null;
-  };
-
+  }, [selected]);
 
   return (
     <motion.div

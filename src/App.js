@@ -357,7 +357,7 @@ function MobileLogoDisplay({ visible }) {
 }
 
 // ─── HTML CURSOR ─────────────────────────────────────────────
-function HTMLCursor({ isLight, hoveredDotLabel }) {
+function HTMLCursor({ isLight, hoveredDotLabel, activePage }) {
   const cursorOuterRef = useRef(); const cursorInnerRef = useRef(); const labelRef = useRef();
   const mousePos = useRef({ x: -200, y: -200 });
   const outerPos = useRef({ x: -200, y: -200 });
@@ -365,8 +365,11 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
   const rafId = useRef(null); const isVisible = useRef(false);
   const isTouchDevice = typeof window !== 'undefined' &&
     window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  const color = isLight ? '#ffffff' : 'var(--ink)';
-  const borderColor = isLight ? 'rgba(255,255,255,0.8)' : 'var(--ink)';
+
+  // Portfolio overlay is dark (#080808) — force white cursor inside it
+  const isPortfolio = activePage === 'portfolio';
+  const color = (isLight || isPortfolio) ? '#ffffff' : 'var(--ink)';
+  const borderColor = (isLight || isPortfolio) ? 'rgba(255,255,255,0.8)' : 'var(--ink)';
 
   useEffect(() => {
     if (isTouchDevice) return;
@@ -457,7 +460,7 @@ function HTMLCursor({ isLight, hoveredDotLabel }) {
 // ─── CINEMATIC HERO TITLE ────────────────────────────────────
 // Replaces the old center title overlay for the hero zone.
 // Shows during hero phase 1 (scroll 0–0.10), fades as logo emerges.
-function CinematicHeroTitle({ visible, logoProgress }) {
+function CinematicHeroTitle({ visible, logoProgress, onPortfolio }) {
   // Stay fully visible until logo starts forming (~0.55), then fade sharply
   const fadeStart = 0.50;
   const fadeEnd = 0.62;
@@ -549,6 +552,23 @@ function CinematicHeroTitle({ visible, logoProgress }) {
             >
               Studio · Creative Direction
             </motion.p>
+
+            {/* Portfolio CTA — fades in after the sub-label */}
+            <motion.button
+              className="hero-portfolio-btn"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              onClick={onPortfolio}
+              style={{ pointerEvents: 'auto' }}
+            >
+              <span className="hero-portfolio-btn-text">View Portfolio</span>
+              <span className="hero-portfolio-btn-arrow">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1209,6 +1229,7 @@ function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selected, setSelected] = useState(null);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [hoveredId, setHoveredId] = useState(null);
   const touchStartX = useRef(null);
   const filtered = activeFilter === 'All'
     ? PORTFOLIO_ITEMS
@@ -1216,17 +1237,13 @@ function PortfolioPage({ onClose }) {
 
   const gallery = selected?.images && selected.images.length > 1 ? selected.images : null;
 
-  const openItem = (item) => {
-    setSelected(item);
-    setSlideIndex(0);
-  };
+  const openItem = (item) => { setSelected(item); setSlideIndex(0); };
 
   const goToSlide = useCallback((next) => {
     if (!gallery) return;
     setSlideIndex(i => (i + next + gallery.length) % gallery.length);
   }, [gallery]);
 
-  // Keyboard nav for the lightbox: ← / → to switch images, Esc to close
   useEffect(() => {
     if (!selected) return;
     const onKey = (e) => {
@@ -1246,164 +1263,282 @@ function PortfolioPage({ onClose }) {
     touchStartX.current = null;
   };
 
+
   return (
     <motion.div
-      className="overlay-page portfolio-page"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 40 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="overlay-page portfolio-page pf-dark"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      <button className="overlay-close overlay-close--dark" onClick={onClose} aria-label="Close">
+      {/* Grain texture overlay */}
+      <div className="pf-grain" aria-hidden="true" />
+
+      {/* Close */}
+      <button className="overlay-close" onClick={onClose} aria-label="Close">
         <span /><span />
       </button>
-      <div className="portfolio-header">
-        <p className="portfolio-eyebrow">Selected work</p>
-        <h2 className="portfolio-title">Portfolio</h2>
-        <div className="portfolio-filters">
+
+      {/* Sticky top bar */}
+      <div className="pf-topbar">
+        <div className="pf-topbar-left">
+          <span className="pf-topbar-label">04 / PORTFOLIO</span>
+          <span className="pf-topbar-count">{filtered.length} works</span>
+        </div>
+        <div className="pf-filters">
           {FILTERS.map(f => (
             <button
               key={f}
-              className={`portfolio-filter ${activeFilter === f ? 'active' : ''}`}
+              className={`pf-filter-btn ${activeFilter === f ? 'active' : ''}`}
               onClick={() => setActiveFilter(f)}
             >{f}</button>
           ))}
         </div>
       </div>
-      <div className="portfolio-grid">
+
+      {/* Hero heading */}
+      <div className="pf-hero-heading">
+        <motion.p
+          className="pf-eyebrow"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.7 }}
+        >Selected work</motion.p>
+        <motion.h2
+          className="pf-big-title"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        >
+          Port<em>folio</em>
+        </motion.h2>
+      </div>
+
+      {/* CONTENT — single masonry grid for all views */}
+      <div className="pf-flat-grid">
         {filtered.map((item, i) => (
           <motion.div
             key={item.id}
-            className="portfolio-item"
-            style={{ aspectRatio: item.aspect }}
-            initial={{ opacity: 0, y: 20 }}
+            className="pf-card"
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: i * 0.04 }}
+            transition={{ duration: 0.55, delay: i * 0.045 }}
+            onMouseEnter={() => setHoveredId(item.id)}
+            onMouseLeave={() => setHoveredId(null)}
             onClick={() => openItem(item)}
           >
-            <div className="portfolio-item-bg" style={{ background: item.bg }} />
-            {item.img && (
-              <img
-                className="portfolio-item-img"
-                src={item.img}
-                alt={item.label}
-                loading="lazy"
-              />
-            )}
-            {item.type === 'video' && (
-              <div className="portfolio-play">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M6 4l8 5-8 5V4z" fill="white" />
-                </svg>
-              </div>
-            )}
-            {item.images && item.images.length > 1 && (
-              <div className="portfolio-gallery-badge">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="14" height="14" rx="2" stroke="white" strokeWidth="1.6" />
-                  <rect x="7" y="7" width="14" height="14" rx="2" fill="#111" stroke="white" strokeWidth="1.6" />
-                </svg>
-                <span>{item.images.length}</span>
-              </div>
-            )}
-            <div className="portfolio-item-info">
-              <span className="portfolio-item-cat">{item.cat}</span>
-              <span className="portfolio-item-label">{item.label}</span>
-            </div>
+            <PfCardInner item={item} hovered={hoveredId === item.id} />
           </motion.div>
         ))}
       </div>
+
+      {/* ── PROJECT DRAWER ─────────────────────────────── */}
       <AnimatePresence>
         {selected && (
           <motion.div
-            className="portfolio-lightbox"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="lb-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={() => setSelected(null)}
           >
             <motion.div
-              className="portfolio-lightbox-inner"
-              style={{ background: selected.bg, aspectRatio: selected.aspect }}
-              initial={{ scale: 0.92 }} animate={{ scale: 1 }} exit={{ scale: 0.92 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="lb-drawer"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               onClick={e => e.stopPropagation()}
-              onTouchStart={gallery ? onTouchStart : undefined}
-              onTouchEnd={gallery ? onTouchEnd : undefined}
             >
-              {gallery ? (
-                <>
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.img
-                      key={slideIndex}
-                      className="portfolio-lightbox-img"
-                      src={gallery[slideIndex]}
-                      alt={`${selected.label} — variation ${slideIndex + 1}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                    />
-                  </AnimatePresence>
-                  <div className="portfolio-lightbox-gradient" />
-                  <button
-                    className="lightbox-nav lightbox-nav--prev"
-                    onClick={(e) => { e.stopPropagation(); goToSlide(-1); }}
-                    aria-label="Previous variation"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M10 2L4 8l6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <button
-                    className="lightbox-nav lightbox-nav--next"
-                    onClick={(e) => { e.stopPropagation(); goToSlide(1); }}
-                    aria-label="Next variation"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M6 2l6 6-6 6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <div className="lightbox-counter">{slideIndex + 1} / {gallery.length}</div>
-                  <div className="lightbox-dots" onClick={e => e.stopPropagation()}>
-                    {gallery.map((_, i) => (
-                      <button
-                        key={i}
-                        className={`lightbox-dot ${i === slideIndex ? 'active' : ''}`}
-                        onClick={() => setSlideIndex(i)}
-                        aria-label={`Go to variation ${i + 1}`}
-                      />
+
+              {/* ── LEFT: images column ── */}
+              <div className="lb-images-col">
+                <LbHeroImage
+                  src={gallery ? gallery[0] : selected.img}
+                  alt={selected.label}
+                  bg={selected.bg}
+                />
+
+                {/* Filmstrip — all extra images stacked below, full-width */}
+                {gallery && gallery.length > 1 && (
+                  <div className="lb-filmstrip">
+                    {gallery.slice(1).map((src, i) => (
+                      <LbFilmImage key={i} src={src} alt={`${selected.label} — ${i + 2}`} />
                     ))}
                   </div>
-                </>
-              ) : (
-                <>
-                  {selected.img && (
-                    <img
-                      className="portfolio-lightbox-img"
-                      src={selected.img}
-                      alt={selected.label}
-                    />
-                  )}
-                  <div className="portfolio-lightbox-gradient" />
-                </>
-              )}
-              {selected.type === 'video' && !gallery && (
-                <div className="portfolio-lightbox-play">
-                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                    <path d="M9 6l16 8-16 8V6z" fill="white" />
-                  </svg>
-                </div>
-              )}
-              <div className="portfolio-lightbox-meta">
-                <span className="portfolio-item-cat">{selected.cat}</span>
-                <span className="portfolio-lightbox-title">{selected.label}</span>
+                )}
               </div>
-              <button className="portfolio-lightbox-close" onClick={() => setSelected(null)}>✕</button>
+
+              {/* ── RIGHT: info panel ── */}
+              <div className="lb-info-panel">
+                <div className="lb-info-sticky">
+                  {/* Close */}
+                  <button className="lb-close" onClick={() => setSelected(null)} aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+
+                  {/* Project meta */}
+                  <div className="lb-meta">
+                    <span className="lb-cat">{selected.cat}</span>
+                    <h2 className="lb-title">{selected.label}</h2>
+                    {gallery && (
+                      <span className="lb-img-count">{gallery.length} images</span>
+                    )}
+                  </div>
+
+                  <div className="lb-divider" />
+
+                  {/* Credits section — placeholder rows, fill content later */}
+                  <div className="lb-credits">
+                    <p className="lb-credits-heading">Project Credits</p>
+                    <div className="lb-credit-row">
+                      <span className="lb-credit-name">— —</span>
+                      <span className="lb-credit-role">Creative Director</span>
+                    </div>
+                    <div className="lb-credit-row">
+                      <span className="lb-credit-name">— —</span>
+                      <span className="lb-credit-role">Lead Architect</span>
+                    </div>
+                    <div className="lb-credit-row">
+                      <span className="lb-credit-name">— —</span>
+                      <span className="lb-credit-role">3D Visualisation</span>
+                    </div>
+                    <div className="lb-credit-row">
+                      <span className="lb-credit-name">— —</span>
+                      <span className="lb-credit-role">Photography</span>
+                    </div>
+                  </div>
+
+                  <div className="lb-divider" />
+
+                  {/* Scroll hint */}
+                  <p className="lb-scroll-hint">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1v10M3 8l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Scroll to see all images
+                  </p>
+                </div>
+              </div>
+
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ─── LIGHTBOX HERO IMAGE ──────────────────────────────────────
+// Reads natural dimensions on load → sets exact aspect-ratio on wrapper
+function LbHeroImage({ src, alt, bg }) {
+  const [ratio, setRatio] = useState(null);
+  const handleLoad = useCallback((e) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
+  }, []);
+
+  return (
+    <div
+      className="lb-hero-img-wrap"
+      style={ratio ? { aspectRatio: `${ratio}` } : { minHeight: '40vh', background: bg }}
+    >
+      {src && (
+        <img
+          className="lb-hero-img"
+          src={src}
+          alt={alt}
+          onLoad={handleLoad}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── LIGHTBOX FILM IMAGE ──────────────────────────────────────
+// Same natural-ratio trick for each image in the filmstrip
+function LbFilmImage({ src, alt }) {
+  const [ratio, setRatio] = useState(null);
+  const handleLoad = useCallback((e) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
+  }, []);
+
+  return (
+    <div
+      className="lb-film-img-wrap"
+      style={ratio ? { aspectRatio: `${ratio}` } : { minHeight: '200px' }}
+    >
+      {src && (
+        <img
+          className="lb-film-img"
+          src={src}
+          alt={alt}
+          onLoad={handleLoad}
+        />
+      )}
+    </div>
+  );
+}
+// Reads each image's natural pixel dimensions on load and locks
+// the card to that exact aspect ratio — zero cropping guaranteed.
+function PfCardInner({ item, hovered, index }) {
+  const [naturalRatio, setNaturalRatio] = useState(null);
+
+  const handleLoad = useCallback((e) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    if (naturalWidth && naturalHeight) {
+      setNaturalRatio(naturalWidth / naturalHeight);
+    }
+  }, []);
+
+  // Card wrapper style — once we know the real ratio, lock it in
+  const cardStyle = naturalRatio
+    ? { aspectRatio: `${naturalRatio}`, overflow: 'hidden' }
+    : { overflow: 'hidden' };
+
+  return (
+    <div className="pf-card-inner-wrap" style={cardStyle}>
+      {item.img ? (
+        <img
+          className={`pf-card-img-natural ${hovered ? 'hovered' : ''}`}
+          src={item.img}
+          alt={item.label}
+          loading="lazy"
+          onLoad={handleLoad}
+        />
+      ) : (
+        <div className="pf-card-placeholder" style={{ background: item.bg }} />
+      )}
+
+      {item.type === 'video' && (
+        <div className="portfolio-play">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M6 4l8 5-8 5V4z" fill="white" />
+          </svg>
+        </div>
+      )}
+      {item.images && item.images.length > 1 && (
+        <div className="portfolio-gallery-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="14" height="14" rx="2" stroke="white" strokeWidth="1.6" />
+            <rect x="7" y="7" width="14" height="14" rx="2" fill="#111" stroke="white" strokeWidth="1.6" />
+          </svg>
+          <span>{item.images.length}</span>
+        </div>
+      )}
+      <div className={`pf-card-info ${hovered ? 'visible' : ''}`}>
+        <span className="pf-card-cat">{item.cat}</span>
+        <span className="pf-card-label">{item.label}</span>
+      </div>
+      {index !== undefined && (
+        <span className="pf-card-index-num">{String(index + 1).padStart(2, '0')}</span>
+      )}
+    </div>
   );
 }
 
@@ -1606,7 +1741,7 @@ export default function App() {
       {!isMobile && <div style={{ height: '640vh', width: '100%' }} aria-hidden="true" />}
 
       <SiteLogo isLight={isLight} />
-      <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} />
+      <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} activePage={activePage} />
       <NavDots
         activeZone={activeZone}
         onNavigate={handleNavigate}
@@ -1624,6 +1759,7 @@ export default function App() {
       <CinematicHeroTitle
         visible={showHeroTitle}
         logoProgress={heroLogoProgress}
+        onPortfolio={() => setActivePage('portfolio')}
       />
 
       {/* CARD DECK (about + skills) */}

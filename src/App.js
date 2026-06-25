@@ -1069,15 +1069,10 @@ function ContactPage({ onClose }) {
 
 // ─── PORTFOLIO PAGE ──────────────────────────────────────────
 const PORTFOLIO_ITEMS = [
-  { id: 1, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#1a1a1a', label: 'Brand Identity — Noir' },
-  { id: 2, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0d0d0d', label: 'Motion Reel 2024' },
+  // ── Architecture ──────────────────────────────────────────────────────────
   {
-    id: 3,
-    type: 'image',
-    cat: 'Architecture',
-    aspect: '3/2',
-    bg: '#111827',
-    label: 'Container Shop — Architecture Render',
+    id: 1, type: 'image', cat: 'Architecture', aspect: '3/2', bg: '#111827',
+    label: 'Container Shop I',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058391/54682_1_dmxunl.png',
     images: [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058391/54682_1_dmxunl.png',
@@ -1088,14 +1083,9 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058341/Container_shop_01_b3ixlf.png',
     ],
   },
-  { id: 4, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#18181b', label: 'Packaging — Minimal' },
   {
-    id: 5,
-    type: 'image',
-    cat: 'Architecture',
-    aspect: '3/2',
-    bg: '#0f172a',
-    label: 'Container Shop II — Architecture Render',
+    id: 2, type: 'image', cat: 'Architecture', aspect: '3/2', bg: '#0f172a',
+    label: 'Container Shop II',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058394/Y3_rlaxbq.png',
     images: [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058394/Y3_rlaxbq.png',
@@ -1103,29 +1093,115 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058340/Container_shop2_clayrender_aqqmch.png',
     ],
   },
-  { id: 6, type: 'video', cat: 'Visualization', aspect: '4/5', bg: '#09090b', label: 'Campaign Film' },
-  { id: 7, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#1c1917', label: 'Visual Identity System' },
   {
-    id: 8,
-    type: 'image',
-    cat: 'Architecture',
-    aspect: '4/3',
-    bg: '#14532d',
+    id: 3, type: 'image', cat: 'Architecture', aspect: '4/3', bg: '#14532d',
     label: '3D Floorplan — 03',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058343/3d_Floorplan_03_owg2r4.png',
   },
-  { id: 9, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#1e1b4b', label: 'Editorial — Type' },
-  { id: 10, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0c0a09', label: 'Brand Film — Luxury' },
   {
-    id: 11,
-    type: 'image',
-    cat: 'Architecture',
-    aspect: '4/3',
-    bg: '#172554',
+    id: 4, type: 'image', cat: 'Architecture', aspect: '4/3', bg: '#172554',
     label: '3D Floorplan — 02',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058338/3d_Floorplan_02_s2tcny.png',
   },
-  { id: 12, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#1a0000', label: 'Poster Series' },
+  {
+    id: 5, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#1c1400',
+    label: 'Lavish Interior — 06',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405444/Lavish_interior_06_yhr7gs.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405444/Lavish_interior_06_yhr7gs.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405451/Lavish_interior_06_02_fpfsts.png',
+    ],
+  },
+  {
+    id: 6, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#1a0f00',
+    label: 'Lavish Interior — 05',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405446/Lavish_interior_05_02_umdjfh.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405446/Lavish_interior_05_02_umdjfh.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405435/Lavish_interior_05_wwyyjl.png',
+    ],
+  },
+  {
+    id: 7, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#180e05',
+    label: 'Lavish Interior — 01',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405443/Lavish_interior_01_q6yq3t.png',
+  },
+  {
+    id: 8, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0d0b08',
+    label: 'Lavish Interior — 04',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405436/Lavish_interior_04_yoiuzu.png',
+  },
+  {
+    id: 9, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#10080a',
+    label: 'Lavish Interior — 02',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405427/Lavish_interior_02_v6mcgj.png',
+  },
+  {
+    id: 10, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0c0c10',
+    label: 'Lavish Interior — 03',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405423/Lavish_interior_03_mcde1q.png',
+  },
+  {
+    id: 11, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#130c06',
+    label: 'Lavish Interior — 07',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405438/Lavish_interior_07_md4yju.png',
+  },
+  {
+    id: 12, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0e0e12',
+    label: 'Interior — 03',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405433/interior_03_n4tg8l.png',
+  },
+  {
+    id: 13, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0a0a10',
+    label: 'Interior — 01',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405417/interior_01_mrw15x.png',
+  },
+  {
+    id: 14, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0f0b0d',
+    label: 'Interior — 02',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405416/interior_02_lfdbed.png',
+  },
+  {
+    id: 15, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0a1020',
+    label: 'Tennis Court',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405442/Tennis_Court_tgcpbq.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405442/Tennis_Court_tgcpbq.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405442/Tennis_Court01_m1lqvx.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405440/Tennis_Court_02_idipo5.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405444/Tennis_Court01_02_dsgyww.png',
+    ],
+  },
+  {
+    id: 16, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0e0a14',
+    label: 'Interior — 04',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407809/interior_04_fqsry1.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407809/interior_04_fqsry1.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407808/interior_05_qwqjei.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407817/interior_06_xnrzhz.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407816/interior_07_amy3pt.png',
+    ],
+  },
+  {
+    id: 17, type: 'image', cat: 'Architecture', aspect: '16/9', bg: '#0c0e10',
+    label: 'Interior — 08',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782408971/interior_08_t3eijs.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782408971/interior_08_t3eijs.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782408967/interior_10_b47qde.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782409277/interior_09_e4sno8.png',
+    ],
+  },
+  // ── Product Visuals (placeholders — will be replaced when links arrive) ────
+  { id: 101, type: 'image', cat: 'Product Visuals', aspect: '4/5',  bg: '#1a1a1a', label: 'Product Visuals — coming soon' },
+  { id: 102, type: 'image', cat: 'Product Visuals', aspect: '1/1',  bg: '#18181b', label: 'Product Visuals — coming soon' },
+  { id: 103, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#1c1917', label: 'Product Visuals — coming soon' },
+  { id: 104, type: 'image', cat: 'Product Visuals', aspect: '4/5',  bg: '#1e1b4b', label: 'Product Visuals — coming soon' },
+  // ── Visualization (placeholders — will be replaced when links arrive) ──────
+  { id: 201, type: 'video', cat: 'Visualization',   aspect: '16/9', bg: '#0d0d0d', label: 'Visualization — coming soon' },
+  { id: 202, type: 'video', cat: 'Visualization',   aspect: '4/5',  bg: '#09090b', label: 'Visualization — coming soon' },
+  { id: 203, type: 'video', cat: 'Visualization',   aspect: '16/9', bg: '#0c0a09', label: 'Visualization — coming soon' },
 ];
 const FILTERS = ['All', 'Product Visuals', 'Architecture', 'Visualization'];
 

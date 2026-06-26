@@ -1213,11 +1213,160 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782409277/interior_09_e4sno8.png',
     ],
   },
-  // ── Product Visuals (placeholders — will be replaced when links arrive) ────
-  { id: 101, type: 'image', cat: 'Product Visuals', aspect: '4/5',  bg: '#1a1a1a', label: 'Product Visuals — coming soon' },
-  { id: 102, type: 'image', cat: 'Product Visuals', aspect: '1/1',  bg: '#18181b', label: 'Product Visuals — coming soon' },
-  { id: 103, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#1c1917', label: 'Product Visuals — coming soon' },
-  { id: 104, type: 'image', cat: 'Product Visuals', aspect: '4/5',  bg: '#1e1b4b', label: 'Product Visuals — coming soon' },
+  // ── Product Visuals ──────────────────────────────────────────────────────────
+  {
+    id: 101, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0d0d0d',
+    label: 'Car Animation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476197/Car_Anim02_ggoazs.png',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782476132/Car_Anim_gw5ewi.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476197/Car_Anim02_ggoazs.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476188/Car_Anim03_p4ojot.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476188/Car_Anim04_jfu7zs.png',
+    ],
+  },
+  {
+    id: 102, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#111114',
+    label: 'Cap Animation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502857/Cap_Anim_gif01_-_frame_at_0m1s_vgsm6n.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782477928/Cap_Anim_V02_260505_un7i8e.mp4',
+    subVideos: [
+      'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782498934/Cap_Anim_gif01_vtkoeg.mp4',
+      'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782498903/Cap_Anim_gif02_qoqumm.mp4',
+    ],
+  },
+  {
+    id: 103, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0a0e',
+    label: 'Final Render',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477863/0074_gxxg8n.png',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782477574/Final_render_o26lng.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477863/0074_gxxg8n.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477860/0148_fvkfyj.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477863/0074_gxxg8n.png',
+    ],
+  },
+  {
+    id: 104, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#141414',
+    label: 'Product — 39',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477896/39_ngy8il.png',
+  },
+  {
+    id: 105, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#161616',
+    label: 'Product — 41',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477902/41_cn8azp.png',
+  },
+  {
+    id: 106, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#131313',
+    label: 'Product — 40',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477897/40_mnvk3j.png',
+  },
+  {
+    id: 107, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#080808',
+    label: 'Composition',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476642/Q3_fmee4a.png',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782476230/Comp_dztwai.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476642/Q3_fmee4a.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476642/Q3_fmee4a.png',
+    ],
+    subVideos: [
+      'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782476567/0001-0240_f5js4k.mp4',
+      
+    ],
+  },
+  {
+    id: 108, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0a10',
+    label: 'Headphones',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502858/headphones0001-0683_-_frame_at_0m2s_ezxryr.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782479465/headphones0001-0683_jwmijv.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479757/A17_z6qbbf.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479753/A16_a3b6cq.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479752/A20_fvufj8.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479757/A17_z6qbbf.png',
+    ],
+  },
+  {
+    id: 109, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0d1014',
+    label: 'SmartMed Arm',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502856/SMARTMED_ARM_Animation_-_frame_at_0m10s_rcfvfm.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782479429/SMARTMED_ARM_Animation_s2q0iv.mp4',
+  },
+  {
+    id: 110, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0f18',
+    label: 'Tennis',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479477/Tennis_cjbhzy.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479477/Tennis_cjbhzy.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479475/Tennis02_k4atlv.png',
+    ],
+  },
+  {
+    id: 111, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
+    label: 'Earbuds',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495227/earbuds_fv0cbr.png',
+  },
+  {
+    id: 112, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#100c08',
+    label: 'Ittar',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495269/Ittar_ukavja.png',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495269/Ittar_ukavja.png',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495274/Ittar02_rdukkc.png',
+    ],
+  },
+  {
+    id: 113, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c0c0e',
+    label: 'Shilajeet',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495267/shilajet_eyxfn4.png',
+  },
+  {
+    id: 114, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#10100e',
+    label: 'Creatine',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Creatine_msouxm.png',
+  },
+  {
+    id: 115, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0e0e0a',
+    label: 'Bag',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495591/bag_02_vit6uj.png',
+  },
+  {
+    id: 116, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c1010',
+    label: 'Inverter',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495598/inverter_02_ktzraw.png',
+  },
+  {
+    id: 117, type: 'video', cat: 'Product Visuals', aspect: '9/16', bg: '#0a0a0a',
+    label: 'Product Reel',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502860/IMG_1139_-_frame_at_0m8s_d1foip.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782495701/IMG_1139_lzmpgz.mp4',
+  },
+  {
+    id: 118, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0e0a14',
+    label: 'Tech Throne',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495280/Tech_Throne_kwygxh.png',
+  },
+  {
+    id: 119, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c0a10',
+    label: 'Chair',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495639/chair_p1byp5.png',
+  },
+  {
+    id: 120, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#101010',
+    label: 'Wheel',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495724/wheel_rurszb.png',
+  },
+  {
+    id: 121, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c0c10',
+    label: 'Shoes',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Shoes_k6bfbn.png',
+  },
+  {
+    id: 122, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0e18',
+    label: 'PS4',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495257/PS4_tq1vr1.png',
+  },
   // ── Visualization (placeholders — will be replaced when links arrive) ──────
   { id: 201, type: 'video', cat: 'Visualization',   aspect: '16/9', bg: '#0d0d0d', label: 'Visualization — coming soon' },
   { id: 202, type: 'video', cat: 'Visualization',   aspect: '4/5',  bg: '#09090b', label: 'Visualization — coming soon' },
@@ -1229,8 +1378,18 @@ function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selected, setSelected] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+  // Randomise order in 'All' view; preserve category order in filtered views
+  const shuffledAll = useMemo(() => {
+    const arr = [...PORTFOLIO_ITEMS];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, []); // runs once per mount — stable random layout
+
   const filtered = activeFilter === 'All'
-    ? PORTFOLIO_ITEMS
+    ? shuffledAll
     : PORTFOLIO_ITEMS.filter(p => p.cat === activeFilter);
 
   const gallery = selected?.images && selected.images.length > 1 ? selected.images : null;
@@ -1339,13 +1498,17 @@ function PortfolioPage({ onClose }) {
                   src={gallery ? gallery[0] : selected.img}
                   alt={selected.label}
                   bg={selected.bg}
+                  videoSrc={selected.video || null}
                 />
 
-                {/* Filmstrip — all extra images stacked below, full-width */}
-                {gallery && gallery.length > 1 && (
+                {/* Filmstrip — extra images + subVideos stacked below */}
+                {((gallery && gallery.length > 1) || selected.subVideos?.length) && (
                   <div className="lb-filmstrip">
-                    {gallery.slice(1).map((src, i) => (
-                      <LbFilmImage key={i} src={src} alt={`${selected.label} — ${i + 2}`} />
+                    {gallery && gallery.slice(1).map((src, i) => (
+                      <LbFilmImage key={`img-${i}`} src={src} alt={`${selected.label} — ${i + 2}`} />
+                    ))}
+                    {selected.subVideos && selected.subVideos.map((src, i) => (
+                      <LbFilmImage key={`vid-${i}`} src={src} alt={`${selected.label} — video ${i + 1}`} isVideo />
                     ))}
                   </div>
                 )}
@@ -1414,13 +1577,31 @@ function PortfolioPage({ onClose }) {
 }
 
 // ─── LIGHTBOX HERO IMAGE ──────────────────────────────────────
-// Reads natural dimensions on load → sets exact aspect-ratio on wrapper
-function LbHeroImage({ src, alt, bg }) {
+// Renders a <video> when videoSrc is provided, otherwise an <img>.
+// Images are constrained to fit the drawer without overflowing.
+function LbHeroImage({ src, alt, bg, videoSrc }) {
   const [ratio, setRatio] = useState(null);
   const handleLoad = useCallback((e) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
   }, []);
+
+  if (videoSrc) {
+    return (
+      <div className="lb-hero-img-wrap lb-video-wrap">
+        <video
+          className="lb-hero-video"
+          src={videoSrc}
+          controls
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={src}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1429,7 +1610,7 @@ function LbHeroImage({ src, alt, bg }) {
     >
       {src && (
         <img
-          className="lb-hero-img"
+          className="lb-hero-img lb-hero-img--fit"
           src={src}
           alt={alt}
           onLoad={handleLoad}
@@ -1440,22 +1621,34 @@ function LbHeroImage({ src, alt, bg }) {
 }
 
 // ─── LIGHTBOX FILM IMAGE ──────────────────────────────────────
-// Same natural-ratio trick for each image in the filmstrip
-function LbFilmImage({ src, alt }) {
+// Renders video or image in the filmstrip depending on src type.
+function LbFilmImage({ src, alt, isVideo }) {
   const [ratio, setRatio] = useState(null);
   const handleLoad = useCallback((e) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
   }, []);
 
+  if (isVideo) {
+    return (
+      <div className="lb-film-img-wrap">
+        <video
+          className="lb-film-img lb-film-img--fit"
+          src={src}
+          controls
+          loop
+          muted
+          playsInline
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="lb-film-img-wrap"
-      style={ratio ? { aspectRatio: `${ratio}` } : { minHeight: '200px' }}
-    >
+    <div className="lb-film-img-wrap">
       {src && (
         <img
-          className="lb-film-img"
+          className="lb-film-img lb-film-img--fit"
           src={src}
           alt={alt}
           onLoad={handleLoad}

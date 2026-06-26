@@ -1623,12 +1623,6 @@ function LbHeroImage({ src, alt, bg, videoSrc }) {
 // ─── LIGHTBOX FILM IMAGE ──────────────────────────────────────
 // Renders video or image in the filmstrip depending on src type.
 function LbFilmImage({ src, alt, isVideo }) {
-  const [ratio, setRatio] = useState(null);
-  const handleLoad = useCallback((e) => {
-    const { naturalWidth, naturalHeight } = e.currentTarget;
-    if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
-  }, []);
-
   if (isVideo) {
     return (
       <div className="lb-film-img-wrap">
@@ -1651,7 +1645,6 @@ function LbFilmImage({ src, alt, isVideo }) {
           className="lb-film-img lb-film-img--fit"
           src={src}
           alt={alt}
-          onLoad={handleLoad}
         />
       )}
     </div>

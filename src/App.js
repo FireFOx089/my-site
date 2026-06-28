@@ -1213,7 +1213,59 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782409277/interior_09_e4sno8.png',
     ],
   },
+  // ── Simulation FX ──────────────────────────────────────────────────────────
+  {
+    id: 102, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#111114',
+    label: 'Cap Animation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502857/Cap_Anim_gif01_-_frame_at_0m1s_vgsm6n.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782477928/Cap_Anim_V02_260505_un7i8e.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479337/Cap_Anim_gif02_oafhua.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479336/Cap_Anim_gif01_uq2auu.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479337/Cap_Anim_gif02_oafhua.gif',
+    ],
+  },
+  {
+    id: 127, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#0d0c0a',
+    label: 'Ahmed Foods Jam & Spread',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782671577/Jam_Spread_Edit_Main_Eng_VO_260413_-_frame_at_0m14s_zypxvi.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782671218/Jam_Spread_Edit_Main_Eng_Vo_260413_low_res_Credits_etektj.mp4',
+  },
+
+  {
+    id: 128, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#0d0c0a',
+    label: 'Jam Flip Simulation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782672262/Jam_Flip_Simulation_-_frame_at_0m0s_kjkfu3.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782672167/Jam_Flip_Simulation_hjnl0e.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672176/Jam_PB_fblddf.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672176/Jam_PB_fblddf.gif',
+    ],
+  },
+
+  {
+    id: 129, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#0d0c0a',
+    label: 'Raspberry Animation and VDB Simulation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782672766/Raspberry_Animation_and_VDB_Simulation_-_frame_at_0m1s_zapklq.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782672566/Raspberry_Animation_and_VDB_Simulation_suiq97.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672740/VDB_nz3e0i.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672740/VDB_nz3e0i.gif',
+    ],
+  },
+
+  {
+    id: 130, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#0d0c0a',
+    label: 'Strawberry RBD Simulation',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782673861/Strawberry_RBD_Simulation_-_frame_at_0m1s_qosi9n.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782673006/Strawberry_RBD_Simulation_judu1e.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782673954/Strawberry_xwgvdr.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782673954/Strawberry_xwgvdr.gif',
+    ],
+  },
   // ── Product Visuals ──────────────────────────────────────────────────────────
+
   {
     id: 101, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0d0d0d',
     label: 'Car Animation',
@@ -1226,14 +1278,15 @@ const PORTFOLIO_ITEMS = [
     ],
   },
   {
-    id: 102, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#111114',
-    label: 'Cap Animation',
-    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502857/Cap_Anim_gif01_-_frame_at_0m1s_vgsm6n.jpg',
-    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782477928/Cap_Anim_V02_260505_un7i8e.mp4',
-    subVideos: [
-      'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782498934/Cap_Anim_gif01_vtkoeg.mp4',
-      'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782498903/Cap_Anim_gif02_qoqumm.mp4',
-    ],
+    id: 126, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#111114',
+    label: 'Tiger VFX',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782667956/SH13_-_frame_at_0m5s_mjovfe.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/v1782667937/Tiger_VFX_ivllsy.mp4',
+    images: [
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668831/Tiger_vfx_PB_sizo1g.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668831/Tiger_vfx_PB_sizo1g.gif',
+      'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668833/Tiger_vfx_PB02_mceqiw.gif',
+    ]
   },
   {
     id: 103, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0a0e',
@@ -1272,7 +1325,7 @@ const PORTFOLIO_ITEMS = [
     ],
     subVideos: [
       'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782476567/0001-0240_f5js4k.mp4',
-      
+
     ],
   },
   {
@@ -1367,12 +1420,30 @@ const PORTFOLIO_ITEMS = [
     label: 'PS4',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495257/PS4_tq1vr1.png',
   },
+  {
+    id: 123, type: 'video', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
+    label: 'Taser Machine',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661558/Taser_jthiqw.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782661503/Taser_machine_gy6muy.mp4',
+  },
+  {
+    id: 124, type: 'video', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
+    label: 'Taser Machine BreakDown',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661798/Break_down_-_frame_at_0m8s_qvbafo.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782661788/Break_down_yekkj4.mp4',
+  },
+  {
+    id: 125, type: 'video', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
+    label: 'Fendi Bag CGI',
+    img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782662201/Fendi_BagV02_-_frame_at_0m2s_bwalxm.jpg',
+    video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/v1782661932/Fendi_BagV02_andqh9.mp4',
+  },
   // ── Visualization (placeholders — will be replaced when links arrive) ──────
-  { id: 201, type: 'video', cat: 'Visualization',   aspect: '16/9', bg: '#0d0d0d', label: 'Visualization — coming soon' },
-  { id: 202, type: 'video', cat: 'Visualization',   aspect: '4/5',  bg: '#09090b', label: 'Visualization — coming soon' },
-  { id: 203, type: 'video', cat: 'Visualization',   aspect: '16/9', bg: '#0c0a09', label: 'Visualization — coming soon' },
+  { id: 201, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0d0d0d', label: 'Visualization — coming soon' },
+  { id: 202, type: 'video', cat: 'Visualization', aspect: '4/5', bg: '#09090b', label: 'Visualization — coming soon' },
+  { id: 203, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0c0a09', label: 'Visualization — coming soon' },
 ];
-const FILTERS = ['All', 'Product Visuals', 'Architecture', 'Visualization'];
+const FILTERS = ['All', 'Simulation FX', 'Product Visuals', 'Architecture', 'Visualization'];
 
 function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');

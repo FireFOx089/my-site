@@ -96,7 +96,8 @@ export default function DomeGallery({
   openedImageHeight = '350px',
   imageBorderRadius = '30px',
   openedImageBorderRadius = '30px',
-  grayscale = true
+  grayscale = true,
+  autoRotateSpeed = 0.012   // degrees per frame (~60fps → ~50s per full rotation)
 }) {
   const rootRef = useRef(null);
   const mainRef = useRef(null);
@@ -113,6 +114,7 @@ export default function DomeGallery({
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
   const inertiaRAF = useRef(null);
+  const autoRotateRAF = useRef(null);   // autorotate animation frame
   const openingRef = useRef(false);
   const openStartedAtRef = useRef(0);
   const lastDragEndAt = useRef(0);
@@ -228,6 +230,60 @@ export default function DomeGallery({
   useEffect(() => {
     applyTransform(rotationRef.current.x, rotationRef.current.y);
   }, []);
+
+  // ── Auto-rotate: slowly spin the dome when the user is idle ──
+  useEffect(() => {
+    if (!autoRotateSpeed) return;
+    let idleTimer = null;
+    const IDLE_DELAY_MS = 1800; // wait this long after drag ends before resuming
+    const startAutoRotate = () => {
+      if (autoRotateRAF.current) return;
+      const tick = () => {
+        // Pause if user is dragging, inertia is running, or an image is open
+        if (
+          draggingRef.current ||
+          inertiaRAF.current ||
+          focusedElRef.current ||
+          openingRef.current
+        ) {
+          autoRotateRAF.current = null;
+          return;
+        }
+        const nextY = wrapAngleSigned(rotationRef.current.y + autoRotateSpeed);
+        rotationRef.current = { ...rotationRef.current, y: nextY };
+        applyTransform(rotationRef.current.x, nextY);
+        autoRotateRAF.current = requestAnimationFrame(tick);
+      };
+      autoRotateRAF.current = requestAnimationFrame(tick);
+    };
+    const stopAutoRotate = () => {
+      if (autoRotateRAF.current) {
+        cancelAnimationFrame(autoRotateRAF.current);
+        autoRotateRAF.current = null;
+      }
+    };
+    const onDragStart = () => {
+      clearTimeout(idleTimer);
+      stopAutoRotate();
+    };
+    const onDragEnd = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(startAutoRotate, IDLE_DELAY_MS);
+    };
+    const main = mainRef.current;
+    main?.addEventListener('pointerdown', onDragStart);
+    main?.addEventListener('pointerup', onDragEnd);
+    main?.addEventListener('pointercancel', onDragEnd);
+    // Kick off on mount after a short initial delay
+    idleTimer = setTimeout(startAutoRotate, IDLE_DELAY_MS);
+    return () => {
+      clearTimeout(idleTimer);
+      stopAutoRotate();
+      main?.removeEventListener('pointerdown', onDragStart);
+      main?.removeEventListener('pointerup', onDragEnd);
+      main?.removeEventListener('pointercancel', onDragEnd);
+    };
+  }, [autoRotateSpeed]);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {

@@ -1,5 +1,5 @@
 import React, {
-  useRef, useMemo, useEffect, useState, useCallback, Suspense
+  useRef, useMemo, useEffect, useState, useCallback, Suspense, useLayoutEffect
 } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { gsap } from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
+import DomeGallery from './DomeGallery';
+import Shuffle from './Shuffle';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,16 +23,20 @@ const isMobile = typeof window !== 'undefined' &&
 const PARTICLE_COUNT = isMobile ? 1000 : 1500;
 
 // ─── ZONES: cube + model merged into hero ───────────────────
+// `target` = scroll progress (0-1) used to jump straight into that zone
+// via nav dots / menu clicks / keyboard nav. Values are chosen to land
+// safely inside each zone's threshold band (see BackgroundParticles).
 const ZONES = [
-  { id: 'hero', index: '01', label: 'WELCOME', title: null },
-  { id: 'about', index: '02', label: 'ABOUT', title: null },
-  { id: 'skills', index: '03', label: 'SKILLS', title: null },
-  { id: 'blank', index: '04', label: 'PORTFOLIO', title: null },
+  { id: 'hero', index: '01', label: 'WELCOME', title: null, target: 0 },
+  { id: 'about', index: '02', label: 'ABOUT', title: null, target: 0.36 },
+  { id: 'skills', index: '03', label: 'SKILLS', title: null, target: 0.60 },
+  { id: 'portfolio', index: '04', label: 'PORTFOLIO', title: null, target: 0.75 },
+  { id: 'blank', index: '05', label: 'CONTACT', title: null, target: 0.93 },
 ];
 const ZONE_TOTAL = ZONES.length;
 
 // Mobile sections: hero has two sub-sections (title + logo)
-const MOBILE_SECTIONS = ['hero-a', 'hero-b', 'about', 'skills', 'blank'];
+const MOBILE_SECTIONS = ['hero-a', 'hero-b', 'about', 'skills', 'portfolio', 'blank'];
 
 const CONFIG_S01 = {
   particleCount: isMobile ? 2000 : 5000,
@@ -180,6 +186,230 @@ function LogoParticles({ visible }) {
 }
 
 // ─── SITE LOGO ───────────────────────────────────────────────
+// ─── STAGGERED MENU ──────────────────────────────────────────
+function StaggeredMenu({ isLight, onNavigate, onPortfolio, onContact }) {
+  const [open, setOpen] = useState(false);
+  const openRef = useRef(false);
+  const panelRef = useRef(null);
+  const preLayersRef = useRef(null);
+  const preLayerElsRef = useRef([]);
+  const plusHRef = useRef(null);
+  const plusVRef = useRef(null);
+  const iconRef = useRef(null);
+  const textInnerRef = useRef(null);
+  const openTlRef = useRef(null);
+  const closeTweenRef = useRef(null);
+  const spinTweenRef = useRef(null);
+  const textCycleAnimRef = useRef(null);
+  const toggleBtnRef = useRef(null);
+  const busyRef = useRef(false);
+  const [textLines, setTextLines] = useState(['Menu', 'Close']);
+
+  const MENU_ITEMS = [
+    { label: 'Welcome', progress: ZONES[0].target, action: 'nav' },
+    { label: 'About', progress: ZONES[1].target, action: 'nav' },
+    { label: 'Skills', progress: ZONES[2].target, action: 'nav' },
+    { label: 'Portfolio', progress: ZONES[3].target, action: 'nav' },
+    { label: 'Contact', progress: null, action: 'contact' },
+  ];
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const panel = panelRef.current;
+      const preContainer = preLayersRef.current;
+      if (!panel) return;
+      const preLayers = preContainer
+        ? Array.from(preContainer.querySelectorAll('.sm-prelayer'))
+        : [];
+      preLayerElsRef.current = preLayers;
+      gsap.set([panel, ...preLayers], { xPercent: 100, opacity: 1 });
+      if (preContainer) gsap.set(preContainer, { xPercent: 0, opacity: 1 });
+      if (plusHRef.current) gsap.set(plusHRef.current, { transformOrigin: '50% 50%', rotate: 0 });
+      if (plusVRef.current) gsap.set(plusVRef.current, { transformOrigin: '50% 50%', rotate: 90 });
+      if (iconRef.current) gsap.set(iconRef.current, { rotate: 0, transformOrigin: '50% 50%' });
+      if (textInnerRef.current) gsap.set(textInnerRef.current, { yPercent: 0 });
+    });
+    return () => ctx.revert();
+  }, []);
+
+  const buildOpenTimeline = useCallback(() => {
+    const panel = panelRef.current;
+    const layers = preLayerElsRef.current;
+    if (!panel) return null;
+    openTlRef.current?.kill();
+    closeTweenRef.current?.kill();
+    closeTweenRef.current = null;
+
+    const itemEls = Array.from(panel.querySelectorAll('.sm-panel-itemLabel'));
+    if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
+
+    const tl = gsap.timeline({ paused: true });
+    layers.forEach((el, i) => {
+      tl.fromTo(el, { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: 'power4.out' }, i * 0.07);
+    });
+    const lastTime = layers.length ? (layers.length - 1) * 0.07 : 0;
+    const panelStart = lastTime + (layers.length ? 0.08 : 0);
+    tl.fromTo(panel, { xPercent: 100 }, { xPercent: 0, duration: 0.65, ease: 'power4.out' }, panelStart);
+    if (itemEls.length) {
+      tl.to(itemEls, {
+        yPercent: 0, rotate: 0, duration: 1,
+        ease: 'power4.out', stagger: { each: 0.1, from: 'start' }
+      }, panelStart + 0.1);
+    }
+    openTlRef.current = tl;
+    return tl;
+  }, []);
+
+  const playOpen = useCallback(() => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    const tl = buildOpenTimeline();
+    if (tl) {
+      tl.eventCallback('onComplete', () => { busyRef.current = false; });
+      tl.play(0);
+    } else { busyRef.current = false; }
+  }, [buildOpenTimeline]);
+
+  const playClose = useCallback(() => {
+    openTlRef.current?.kill();
+    openTlRef.current = null;
+    const panel = panelRef.current;
+    const layers = preLayerElsRef.current;
+    if (!panel) return;
+    closeTweenRef.current?.kill();
+    closeTweenRef.current = gsap.to([...layers, panel], {
+      xPercent: 100, duration: 0.32, ease: 'power3.in', overwrite: 'auto',
+      onComplete: () => {
+        const itemEls = Array.from(panel.querySelectorAll('.sm-panel-itemLabel'));
+        if (itemEls.length) gsap.set(itemEls, { yPercent: 140, rotate: 10 });
+        busyRef.current = false;
+      }
+    });
+  }, []);
+
+  const animateIcon = useCallback(opening => {
+    if (!iconRef.current) return;
+    spinTweenRef.current?.kill();
+    spinTweenRef.current = gsap.to(iconRef.current, {
+      rotate: opening ? 225 : 0,
+      duration: opening ? 0.8 : 0.35,
+      ease: opening ? 'power4.out' : 'power3.inOut',
+      overwrite: 'auto'
+    });
+  }, []);
+
+  const animateText = useCallback(opening => {
+    const inner = textInnerRef.current;
+    if (!inner) return;
+    textCycleAnimRef.current?.kill();
+    const seq = opening
+      ? ['Menu', 'Close', 'Menu', 'Close']
+      : ['Close', 'Menu', 'Close', 'Menu'];
+    setTextLines(seq);
+    gsap.set(inner, { yPercent: 0 });
+    const finalShift = ((seq.length - 1) / seq.length) * 100;
+    textCycleAnimRef.current = gsap.to(inner, {
+      yPercent: -finalShift,
+      duration: 0.5 + seq.length * 0.07,
+      ease: 'power4.out'
+    });
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
+    setOpen(false);
+    playClose();
+    animateIcon(false);
+    animateText(false);
+  }, [playClose, animateIcon, animateText]);
+
+  const toggleMenu = useCallback(() => {
+    const target = !openRef.current;
+    openRef.current = target;
+    setOpen(target);
+    if (target) playOpen(); else playClose();
+    animateIcon(target);
+    animateText(target);
+  }, [playOpen, playClose, animateIcon, animateText]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (panelRef.current?.contains(e.target)) return;
+      if (toggleBtnRef.current?.contains(e.target)) return;
+      closeMenu();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open, closeMenu]);
+
+  const handleItemClick = (item) => {
+    closeMenu();
+    setTimeout(() => {
+      if (item.action === 'nav') onNavigate(item.progress);
+      else if (item.action === 'portfolio') onPortfolio();
+      else if (item.action === 'contact') onContact();
+    }, 340);
+  };
+
+  return (
+    <div className="sm-wrapper" data-position="right" data-open={open || undefined}>
+      <div ref={preLayersRef} className="sm-prelayers" aria-hidden="true">
+        {['#111111', '#1a1a1a'].map((c, i) => (
+          <div key={i} className="sm-prelayer" style={{ background: c }} />
+        ))}
+      </div>
+      <button
+        ref={toggleBtnRef}
+        className="sm-toggle-btn"
+        onClick={toggleMenu}
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        style={{ color: isLight ? '#ffffff' : '#0d0d0d' }}
+      >
+        <span className="sm-toggle-textwrap" aria-hidden="true">
+          <span ref={textInnerRef} className="sm-toggle-textinner">
+            {textLines.map((l, i) => (
+              <span className="sm-toggle-textline" key={i}>{l}</span>
+            ))}
+          </span>
+        </span>
+        <span ref={iconRef} className="sm-icon" aria-hidden="true">
+          <span ref={plusHRef} className="sm-icon-line" />
+          <span ref={plusVRef} className="sm-icon-line sm-icon-line-v" />
+        </span>
+      </button>
+      <aside ref={panelRef} className="sm-panel" aria-hidden={!open}>
+        <div className="sm-panel-inner">
+          <div className="sm-panel-logo">
+            <img src="/logo.png" alt="ARTSNFAR STUDIO" className="sm-panel-logo-img" />
+          </div>
+          <nav className="sm-panel-nav">
+            <ul className="sm-panel-list">
+              {MENU_ITEMS.map((item, idx) => (
+                <li key={item.label} className="sm-panel-item-wrap">
+                  <button
+                    className="sm-panel-item"
+                    onClick={() => handleItemClick(item)}
+                  >
+                    <span className="sm-panel-num">{String(idx + 1).padStart(2, '0')}</span>
+                    <span className="sm-panel-itemLabel">{item.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div className="sm-panel-footer">
+            <span className="sm-panel-footer-text">ARTSNFAR STUDIO · 2024</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// ─── SITE LOGO ────────────────────────────────────────────────
 function SiteLogo({ isLight }) {
   return (
     <img
@@ -269,7 +499,7 @@ function NavDots({ activeZone, onNavigate, isLight, onDotHover }) {
           <motion.button
             key={zone.id}
             className={`nav-dot ${activeZone === zone.id ? 'active' : ''}`}
-            onClick={() => onNavigate(i / (ZONES.length - 1))}
+            onClick={() => onNavigate(zone.target)}
             onMouseEnter={() => { setHoveredIndex(i); onDotHover(zone.label); }}
             onMouseLeave={() => { setHoveredIndex(null); onDotHover(null); }}
             aria-label={`Go to ${zone.label}`}
@@ -295,9 +525,9 @@ function ScrollIndicator({ visible }) {
       {visible && (
         <motion.div
           className="scroll-indicator"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 10, scale: 1.02 }}
+          animate={{ opacity: 1, y: 0, scale: 1.02 }}
+          exit={{ opacity: 0, y: 10, scale: 1.02 }}
           transition={{ duration: 0.8, delay: 1 }}
         >
           {isMobile ? (
@@ -460,7 +690,7 @@ function HTMLCursor({ isLight, hoveredDotLabel, activePage }) {
 // ─── CINEMATIC HERO TITLE ────────────────────────────────────
 // Replaces the old center title overlay for the hero zone.
 // Shows during hero phase 1 (scroll 0–0.10), fades as logo emerges.
-function CinematicHeroTitle({ visible, logoProgress, onPortfolio }) {
+function CinematicHeroTitle({ visible, logoProgress, onPortfolio, showScrollIndicator }) {
   // Stay fully visible until logo starts forming (~0.55), then fade sharply
   const fadeStart = 0.50;
   const fadeEnd = 0.62;
@@ -569,6 +799,7 @@ function CinematicHeroTitle({ visible, logoProgress, onPortfolio }) {
                 </svg>
               </span>
             </motion.button>
+            <ScrollIndicator visible={showScrollIndicator} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -692,9 +923,10 @@ function BackgroundParticles({
     const p = scrollProgress.current;
     const modelShape = modelShapeRef.current || seedBuffer;
 
-    // ── Zone detection (4 zones, each ~25% of scroll) ──
+    // ── Zone detection (5 zones) ──
     let newZone = 'hero';
-    if (p > 0.78) newZone = 'blank';
+    if (p > 0.85) newZone = 'blank';
+    else if (p > 0.70) newZone = 'portfolio';
     else if (p > 0.55) newZone = 'skills';
     else if (p > 0.33) newZone = 'about';
 
@@ -708,7 +940,7 @@ function BackgroundParticles({
     setHeroLogoProgress(logoT);
 
     const pos = pointsRef.current.geometry.attributes.position.array;
-    if (newZone !== 'blank') {
+    if (newZone !== 'blank' && newZone !== 'portfolio') {
       for (let i = 0; i < count * 3; i++) {
         let target;
         if (p <= 0.15) {
@@ -1445,6 +1677,12 @@ const PORTFOLIO_ITEMS = [
 ];
 const FILTERS = ['All', 'Simulation FX', 'Product Visuals', 'Architecture', 'Visualization'];
 
+// Images for the page-4 DomeGallery — reuses the same source images as the
+// full portfolio overlay so both stay in sync automatically.
+const DOME_IMAGES = PORTFOLIO_ITEMS
+  .filter(p => p.img)
+  .map(p => ({ src: p.img, alt: p.label }));
+
 function PortfolioPage({ onClose }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selected, setSelected] = useState(null);
@@ -1493,7 +1731,7 @@ function PortfolioPage({ onClose }) {
       {/* Sticky top bar */}
       <div className="pf-topbar">
         <div className="pf-topbar-left">
-          <span className="pf-topbar-label">04 / PORTFOLIO</span>
+          <span className="pf-topbar-label">PORTFOLIO — ALL WORKS</span>
           <span className="pf-topbar-count">{filtered.length} works</span>
         </div>
         <div className="pf-filters">
@@ -1859,6 +2097,10 @@ export default function App() {
         setActiveZone('skills');
         setHeroLogoProgress(1);
         break;
+      case 'portfolio':
+        setActiveZone('portfolio');
+        setHeroLogoProgress(1);
+        break;
       case 'blank':
         setActiveZone('blank');
         setHeroLogoProgress(1);
@@ -1873,7 +2115,7 @@ export default function App() {
     if (!isMobile) return;
     const handleTap = (e) => {
       // Skip if tapping interactive elements, overlays, or buttons
-      if (e.target.closest('.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost')) return;
+      if (e.target.closest('.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .sphere-root')) return;
       // Skip if an overlay page is open
       if (document.querySelector('.overlay-page')) return;
       setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
@@ -1922,7 +2164,7 @@ export default function App() {
     if (isMobile) {
       const zoneIndex = Math.round(progress * (ZONES.length - 1));
       // Map zone index → mobile section index
-      const sectionMap = [0, 2, 3, 4]; // hero-a, about, skills, blank
+      const sectionMap = [0, 2, 3, 4, 5]; // hero-a, about, skills, portfolio, blank
       setMobileSection(sectionMap[zoneIndex] ?? 0);
     } else {
       const totalHeight = document.body.scrollHeight - window.innerHeight;
@@ -1939,9 +2181,9 @@ export default function App() {
       } else {
         const currentIdx = ZONES.findIndex(z => z.id === activeZone);
         if (e.key === 'ArrowDown' && currentIdx < ZONES.length - 1)
-          handleNavigate(currentIdx / (ZONES.length - 1) + 1 / (ZONES.length - 1));
+          handleNavigate(ZONES[currentIdx + 1].target);
         if (e.key === 'ArrowUp' && currentIdx > 0)
-          handleNavigate((currentIdx - 1) / (ZONES.length - 1));
+          handleNavigate(ZONES[currentIdx - 1].target);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1950,7 +2192,7 @@ export default function App() {
 
   const particleColor = activeZone === 'blank' ? '#ffffff' : '#111111';
   const isCardZone = activeZone === 'about' || activeZone === 'skills';
-  const isLight = activeZone === 'blank';
+  const isLight = activeZone === 'blank' || activeZone === 'portfolio';
 
   // Hero title: visible in hero zone part A
   const showHeroTitle = isMobile
@@ -1978,6 +2220,12 @@ export default function App() {
       {!isMobile && <div style={{ height: '640vh', width: '100%' }} aria-hidden="true" />}
 
       <SiteLogo isLight={isLight} />
+      <StaggeredMenu
+        isLight={isLight}
+        onNavigate={handleNavigate}
+        onPortfolio={() => setActivePage('portfolio')}
+        onContact={() => setActivePage('contact')}
+      />
       <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} activePage={activePage} />
       <NavDots
         activeZone={activeZone}
@@ -1997,6 +2245,7 @@ export default function App() {
         visible={showHeroTitle}
         logoProgress={heroLogoProgress}
         onPortfolio={() => setActivePage('portfolio')}
+        showScrollIndicator={showIndicator}
       />
 
       {/* CARD DECK (about + skills) */}
@@ -2166,6 +2415,68 @@ export default function App() {
         </motion.div>
       </div>
 
+      {/* PORTFOLIO ZONE — page 4 */}
+      <div className={`portfolio-content-page ${activeZone === 'portfolio' ? 'visible' : ''}`}>
+        <div className="pfz-wrapper">
+          <div className="pfz-bg-number">04</div>
+
+          <motion.div
+            className="pfz-dome-wrap"
+            initial={{ opacity: 0, scale: 1.2 }}
+            animate={activeZone === 'portfolio' ? { opacity: 1, scale: 1.2 } : { opacity: 0, scale: 1.2 }}
+            transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <DomeGallery
+              images={DOME_IMAGES}
+              fit={isMobile ? 0.85 : 1.2}
+              minRadius={isMobile ? 500 : 1200}
+              maxRadius={2000}
+              segments={26}
+              grayscale={false}
+              overlayBlurColor="#0c0c0c"
+              imageBorderRadius="10px"
+              openedImageBorderRadius="10px"
+              openedImageWidth={isMobile ? '220px' : '420px'}
+              openedImageHeight={isMobile ? '300px' : '520px'}
+              maxVerticalRotationDeg={8}
+              dragSensitivity={22}
+              padFactor={0.22}
+            />
+          </motion.div>
+
+          <div className="pfz-viewmore-center">
+            <motion.button
+              className="pfz-viewmore-btn"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={activeZone === 'portfolio' ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+              whileHover={{ scale: 1.06 }}
+              transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              onClick={() => setActivePage('portfolio')}
+              aria-label="View full portfolio"
+            >
+              {activeZone === 'portfolio' && (
+                <Shuffle
+                  key={`view-more-${activeZone === 'portfolio'}`}
+                  text="View More"
+                  tag="span"
+                  className="pfz-viewmore-shuffle"
+                  duration={0.4}
+                  shuffleDirection="right"
+                  animationMode="evenodd"
+                  shuffleTimes={2}
+                  ease="power3.out"
+                  stagger={0.04}
+                  threshold={0}
+                  triggerOnce={false}
+                  triggerOnHover={true}
+                  respectReducedMotion={true}
+                />
+              )}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+
       {/* FINALE */}
       <div className={`final-content-page ${activeZone === 'blank' ? 'visible' : ''}`}>
         <FinaleParticles active={activeZone === 'blank'} />
@@ -2180,7 +2491,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 1.15 }}
             animate={activeZone === 'blank' ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.15 }}
             transition={{ duration: 1.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >04</motion.div>
+          >05</motion.div>
           <div className="finale-center">
             <motion.div
               className="finale-eyebrow"
@@ -2218,9 +2529,6 @@ export default function App() {
               <button className="finale-btn-primary" onClick={() => setActivePage('contact')}>
                 Contact Us
               </button>
-              <button className="finale-btn-ghost" onClick={() => setActivePage('portfolio')}>
-                Portfolio
-              </button>
             </motion.div>
           </div>
           <motion.div
@@ -2229,13 +2537,13 @@ export default function App() {
             animate={activeZone === 'blank' ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 1, delay: 1.5 }}
           >
-            {ZONES.slice(0, 3).map((zone, i) => (
+            {ZONES.slice(0, 4).map((zone, i, arr) => (
               <React.Fragment key={zone.id}>
                 <div className="finale-timeline-item">
                   <span className="finale-timeline-num">{zone.index}</span>
                   <span className="finale-timeline-label">{zone.label}</span>
                 </div>
-                {i < 2 && <div className="finale-timeline-connector" />}
+                {i < arr.length - 1 && <div className="finale-timeline-connector" />}
               </React.Fragment>
             ))}
           </motion.div>
@@ -2243,13 +2551,13 @@ export default function App() {
       </div>
 
       <ZoneCounter activeZone={activeZone} isLight={isLight} />
-      <ScrollIndicator visible={showIndicator} />
+
 
       {/* THREE.JS CANVAS — desktop only */}
       {!isMobile && (
         <div
           className="canvas-container"
-          style={{ visibility: activeZone === 'blank' ? 'hidden' : 'visible' }}
+          style={{ visibility: (activeZone === 'blank' || activeZone === 'portfolio') ? 'hidden' : 'visible' }}
         >
           <Canvas
             camera={{ position: [0, 0, 5], fov: 85 }}
@@ -2274,7 +2582,7 @@ export default function App() {
               />
             </Suspense>
             <ClickHandler rotationVelocity={rotationVelocity} />
-            {activeZone !== 'blank' && (
+            {(activeZone !== 'blank' && activeZone !== 'portfolio') && (
               <EffectComposer>
                 <Bloom intensity={0.35} luminanceThreshold={0.88} mipmapBlur />
                 <Vignette darkness={0.45} offset={0.28} />

@@ -187,7 +187,7 @@ function LogoParticles({ visible }) {
 
 // ─── SITE LOGO ───────────────────────────────────────────────
 // ─── STAGGERED MENU ──────────────────────────────────────────
-function StaggeredMenu({ isLight, onNavigate, onPortfolio, onContact }) {
+function StaggeredMenu({ isLight, onNavigate, onPortfolio, onContact, hideToggle }) {
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
   const panelRef = useRef(null);
@@ -362,10 +362,12 @@ function StaggeredMenu({ isLight, onNavigate, onPortfolio, onContact }) {
       </div>
       <button
         ref={toggleBtnRef}
-        className="sm-toggle-btn"
+        className={`sm-toggle-btn ${hideToggle ? 'sm-toggle-btn--hidden' : ''}`}
         onClick={toggleMenu}
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
+        aria-hidden={hideToggle || undefined}
+        tabIndex={hideToggle ? -1 : 0}
         style={{ color: isLight ? '#ffffff' : '#0d0d0d' }}
       >
         <span className="sm-toggle-textwrap" aria-hidden="true">
@@ -1890,9 +1892,11 @@ function PortfolioPage({ onClose }) {
 // Images are constrained to fit the drawer without overflowing.
 function LbHeroImage({ src, alt, bg, videoSrc }) {
   const [ratio, setRatio] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   const handleLoad = useCallback((e) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     if (naturalWidth && naturalHeight) setRatio(naturalWidth / naturalHeight);
+    setLoaded(true);
   }, []);
 
   if (videoSrc) {
@@ -1918,12 +1922,21 @@ function LbHeroImage({ src, alt, bg, videoSrc }) {
       style={ratio ? { aspectRatio: `${ratio}` } : { minHeight: '40vh', background: bg }}
     >
       {src && (
-        <img
-          className="lb-hero-img lb-hero-img--fit"
-          src={src}
-          alt={alt}
-          onLoad={handleLoad}
-        />
+        <>
+          <div
+            className={`img-skeleton ${loaded ? 'img-skeleton--hidden' : ''}`}
+            style={bg ? {
+              background: `linear-gradient(100deg, ${bg}18, ${bg}45, ${bg}18)`,
+              backgroundSize: '200% 100%'
+            } : undefined}
+          />
+          <img
+            className={`lb-hero-img lb-hero-img--fit ${loaded ? 'is-loaded' : ''}`}
+            src={src}
+            alt={alt}
+            onLoad={handleLoad}
+          />
+        </>
       )}
     </div>
   );
@@ -1932,6 +1945,8 @@ function LbHeroImage({ src, alt, bg, videoSrc }) {
 // ─── LIGHTBOX FILM IMAGE ──────────────────────────────────────
 // Renders video or image in the filmstrip depending on src type.
 function LbFilmImage({ src, alt, isVideo }) {
+  const [loaded, setLoaded] = useState(false);
+
   if (isVideo) {
     return (
       <div className="lb-film-img-wrap">
@@ -1950,11 +1965,16 @@ function LbFilmImage({ src, alt, isVideo }) {
   return (
     <div className="lb-film-img-wrap">
       {src && (
-        <img
-          className="lb-film-img lb-film-img--fit"
-          src={src}
-          alt={alt}
-        />
+        <>
+          <div className={`img-skeleton ${loaded ? 'img-skeleton--hidden' : ''}`} />
+          <img
+            className={`lb-film-img lb-film-img--fit ${loaded ? 'is-loaded' : ''}`}
+            src={src}
+            alt={alt}
+            loading="lazy"
+            onLoad={() => setLoaded(true)}
+          />
+        </>
       )}
     </div>
   );
@@ -1963,29 +1983,42 @@ function LbFilmImage({ src, alt, isVideo }) {
 // the card to that exact aspect ratio — zero cropping guaranteed.
 function PfCardInner({ item, hovered, index }) {
   const [naturalRatio, setNaturalRatio] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   const handleLoad = useCallback((e) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     if (naturalWidth && naturalHeight) {
       setNaturalRatio(naturalWidth / naturalHeight);
     }
+    setLoaded(true);
   }, []);
 
-  // Card wrapper style — once we know the real ratio, lock it in
+  // Card wrapper style — reserve a sensible box before we know the real
+  // ratio (prevents masonry jump / blank flash), then lock to the exact
+  // ratio once the image has loaded.
   const cardStyle = naturalRatio
     ? { aspectRatio: `${naturalRatio}`, overflow: 'hidden' }
-    : { overflow: 'hidden' };
+    : { aspectRatio: '4 / 3', overflow: 'hidden' };
 
   return (
     <div className="pf-card-inner-wrap" style={cardStyle}>
       {item.img ? (
-        <img
-          className={`pf-card-img-natural ${hovered ? 'hovered' : ''}`}
-          src={item.img}
-          alt={item.label}
-          loading="lazy"
-          onLoad={handleLoad}
-        />
+        <>
+          <div
+            className={`img-skeleton ${loaded ? 'img-skeleton--hidden' : ''}`}
+            style={item.bg ? {
+              background: `linear-gradient(100deg, ${item.bg}18, ${item.bg}45, ${item.bg}18)`,
+              backgroundSize: '200% 100%'
+            } : undefined}
+          />
+          <img
+            className={`pf-card-img-natural ${hovered ? 'hovered' : ''} ${loaded ? 'is-loaded' : ''}`}
+            src={item.img}
+            alt={item.label}
+            loading="lazy"
+            onLoad={handleLoad}
+          />
+        </>
       ) : (
         <div className="pf-card-placeholder" style={{ background: item.bg }} />
       )}
@@ -2225,6 +2258,7 @@ export default function App() {
         onNavigate={handleNavigate}
         onPortfolio={() => setActivePage('portfolio')}
         onContact={() => setActivePage('contact')}
+        hideToggle={!!activePage}
       />
       <HTMLCursor isLight={isLight} hoveredDotLabel={hoveredDotLabel} activePage={activePage} />
       <NavDots

@@ -1253,10 +1253,50 @@ function FinaleParticles({ active }) {
 }
 
 // ─── CONTACT PAGE ────────────────────────────────────────────
+// Encodes a plain object as x-www-form-urlencoded, required by Netlify's
+// form-handling endpoint when submitting via fetch instead of a native
+// full-page form POST.
+function encodeFormData(data) {
+  return Object.keys(data)
+    .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+    .join('&');
+}
+
 function ContactPage({ onClose }) {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const [sent, setSent] = useState(false);
-  const handleSubmit = (e) => { e.preventDefault(); setSent(true); };
+  const [form, setForm] = useState({ name: '', email: '', message: '', company: '' });
+  const [status, setStatus] = useState('idle'); // idle | submitting | sent | error
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Honeypot: real visitors never fill this in (it's visually hidden).
+    // A bot that fills every field will trip this, so we just quietly
+    // pretend it worked instead of telling it what went wrong.
+    if (form.company) {
+      setStatus('sent');
+      return;
+    }
+
+    setStatus('submitting');
+    try {
+      await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: encodeFormData({
+          'form-name': 'contact',
+          name: form.name,
+          email: form.email,
+          message: form.message
+        })
+      });
+      setStatus('sent');
+    } catch (err) {
+      setStatus('error');
+    }
+  };
+
+  const sent = status === 'sent';
+  const submitting = status === 'submitting';
 
   return (
     <motion.div
@@ -1277,7 +1317,31 @@ function ContactPage({ onClose }) {
               <h2 className="contact-title">Let's build<br /><em>something.</em></h2>
               <p className="contact-subtitle">We respond within 24 hours.</p>
             </div>
-            <form className="contact-form" onSubmit={handleSubmit}>
+            {/* name="contact" must match the hidden form registered in
+                public/index.html so Netlify's build-time crawler picks it up. */}
+            <form
+              className="contact-form"
+              name="contact"
+              method="POST"
+              data-netlify="true"
+              data-netlify-honeypot="company"
+              onSubmit={handleSubmit}
+            >
+              <input type="hidden" name="form-name" value="contact" />
+              {/* Honeypot field — real users never see or fill this in */}
+              <p className="contact-hp-field" aria-hidden="true">
+                <label>
+                  Company
+                  <input
+                    tabIndex={-1}
+                    autoComplete="off"
+                    name="company"
+                    value={form.company}
+                    onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
+                  />
+                </label>
+              </p>
+
               <div className="contact-field">
                 <label className="contact-label">Name</label>
                 <input className="contact-input" type="text" placeholder="Your name" required
@@ -1293,7 +1357,15 @@ function ContactPage({ onClose }) {
                 <textarea className="contact-textarea" placeholder="Tell us about your project…" required rows={5}
                   value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
               </div>
-              <button className="contact-submit" type="submit">Send message</button>
+              {status === 'error' && (
+                <p className="contact-error">
+                  Something went wrong — please try again, or email us directly at{' '}
+                  <a href="mailto:hello@studio.com">hello@studio.com</a>.
+                </p>
+              )}
+              <button className="contact-submit" type="submit" disabled={submitting}>
+                {submitting ? 'Sending…' : 'Send message'}
+              </button>
             </form>
             <div className="contact-links">
               <a href="mailto:hello@studio.com" className="contact-link">hello@studio.com</a>

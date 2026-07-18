@@ -1142,9 +1142,9 @@ function WaveDotGrid({ visible }) {
 
 // ─── SKILLS GRID ─────────────────────────────────────────────
 const SKILL_ITEMS = [
-  { category: 'Design', items: ['Figma', 'After Effects', 'Cinema 4D', 'Blender'] },
-  { category: 'Frontend', items: ['React', 'Three.js', 'GSAP', 'WebGL'] },
-  { category: 'Backend', items: ['Node.js', 'GraphQL', 'PostgreSQL', 'Redis'] },
+  { category: 'CGI Tools', items: ['Blender', 'Houdini', 'Roblox', 'Substance Painter'] },
+  { category: 'Graphic Design', items: ['Illustrator', 'Photoshop', 'Figma'] },
+  { category: 'Workflow', items: ['Modeling', 'Look Dev', 'Animation', 'Rendering', 'Lighting', 'VFX', 'Simulation'] },
   { category: 'Creative', items: ['Direction', 'Branding', 'Motion', 'Strategy'] },
 ];
 
@@ -2122,6 +2122,82 @@ function PfCardInner({ item, hovered, index }) {
   );
 }
 
+// ─── ABOUT CARD FACE ─────────────────────────────────────────
+// Renders one face (front = Company, back = Personal) of the
+// About card. Parametrized so the flip toggle can swap content
+// without duplicating the entrance-animation logic.
+function AboutCardFace({ active, isPhoneWidth, eyebrow, titleLines, description, stats, mobileTagLines, rightNode }) {
+  return (
+    <div className="about-wrapper">
+      <motion.div
+        className="about-left"
+        animate={active ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ duration: 1, delay: 0.35 }}
+      >
+        <div className="about-eyebrow">
+          <span className="eyebrow-line" />
+          <span className="eyebrow-text">{eyebrow}</span>
+        </div>
+        <div className="about-title-block">
+          {titleLines.map((line, i) => (
+            <motion.span
+              key={line}
+              className={`about-title-line${i === 1 ? ' about-title-italic' : ''}`}
+              initial={{ opacity: 0, y: 24 }}
+              animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+              transition={{ duration: 0.9, delay: 0.5 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+            >{line}</motion.span>
+          ))}
+        </div>
+        <motion.p
+          className="about-description"
+          initial={{ opacity: 0, y: 14 }}
+          animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+          transition={{ duration: 0.9, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {description}
+        </motion.p>
+        <motion.div
+          className="about-stats"
+          animate={active ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.9, delay: 1.05 }}
+        >
+          {stats.map(([n, l], i) => (
+            <React.Fragment key={l}>
+              {i > 0 && <div className="stat-divider" />}
+              <div className="stat-item">
+                <span className="stat-number">{n}</span>
+                <span className="stat-label">{l}</span>
+              </div>
+            </React.Fragment>
+          ))}
+        </motion.div>
+      </motion.div>
+      {!isPhoneWidth && (
+        <>
+          <div className="about-divider" />
+          <motion.div
+            className="about-right"
+            animate={active ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 1.1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {rightNode}
+          </motion.div>
+        </>
+      )}
+      {isPhoneWidth && (
+        <motion.div
+          className="about-mobile-tag"
+          animate={active ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.9, delay: 1.15 }}
+        >
+          {mobileTagLines.map((t) => <span key={t}>{t}</span>)}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────
 export default function App() {
   const [activeZone, setActiveZone] = useState('hero');
@@ -2132,6 +2208,10 @@ export default function App() {
   const [activePage, setActivePage] = useState(null);
   // heroLogoProgress: 0 = title visible, 1 = logo fully formed
   const [heroLogoProgress, setHeroLogoProgress] = useState(0);
+
+  // About card (page 2): flips between Company Profile (front) and
+  // Personal Profile (back) via the toggle pill at the top of the card.
+  const [isAboutFlipped, setIsAboutFlipped] = useState(false);
 
   // Mobile: section-based navigation (tap to advance)
   const [mobileSection, setMobileSection] = useState(0);
@@ -2365,9 +2445,9 @@ export default function App() {
       >
         <WaveDotGrid visible={isCardZone} />
 
-        {/* ABOUT CARD */}
+        {/* ABOUT CARD — flips between Company Profile (front) and Personal Profile (back) */}
         <motion.div
-          className="glass-container card-deck-card about-card"
+          className="card-deck-card about-card"
           style={{ zIndex: 2 }}
           animate={
             activeZone === 'about' ? { y: '0%', scale: 1, opacity: 1 } :
@@ -2376,81 +2456,65 @@ export default function App() {
           }
           transition={{ duration: 0.7, ease: [0.32, 0, 0.67, 0] }}
         >
-          <div className="about-wrapper">
-            <motion.div
-              className="about-left"
-              animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ duration: 1, delay: 0.35 }}
-            >
-              <div className="about-eyebrow">
-                <span className="eyebrow-line" />
-                <span className="eyebrow-text">Est. 2024</span>
-              </div>
-              <div className="about-title-block">
-                {['We craft', 'experiences.'].map((line, i) => (
-                  <motion.span
-                    key={line}
-                    className={`about-title-line${i === 1 ? ' about-title-italic' : ''}`}
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-                    transition={{ duration: 0.9, delay: 0.5 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  >{line}</motion.span>
-                ))}
-              </div>
-              <motion.p
-                className="about-description"
-                initial={{ opacity: 0, y: 14 }}
-                animate={activeZone === 'about' ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-                transition={{ duration: 0.9, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
-              >
-                A creative studio at the intersection of art, technology, and human connection
-                — transforming the ordinary into the extraordinary through meticulous craft
-                and a relentless pursuit of beauty.
-              </motion.p>
-              <motion.div
-                className="about-stats"
-                animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
-                transition={{ duration: 0.9, delay: 1.05 }}
-              >
-                {[['120+', 'Projects'], ['40+', 'Clients'], ['8', 'Awards']].map(([n, l], i) => (
-                  <React.Fragment key={l}>
-                    {i > 0 && <div className="stat-divider" />}
-                    <div className="stat-item">
-                      <span className="stat-number">{n}</span>
-                      <span className="stat-label">{l}</span>
-                    </div>
-                  </React.Fragment>
-                ))}
-              </motion.div>
-            </motion.div>
-            {!isPhoneWidth && (
-              <>
-                <div className="about-divider" />
-                <motion.div
-                  className="about-right"
-                  animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
-                  transition={{ duration: 1.1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className="about-image-frame">
-                    <div className="image-border-offset" />
-                    <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
-                    <div className="image-caption-tag"><span>Studio / 2024</span></div>
-                  </div>
-                </motion.div>
-              </>
-            )}
+          {/* Toggle pill — top centre of the card */}
+          <button
+            type="button"
+            className={`about-flip-toggle${isAboutFlipped ? ' is-flipped' : ''}`}
+            onClick={() => setIsAboutFlipped((f) => !f)}
+            aria-pressed={isAboutFlipped}
+            aria-label="Toggle between personal profile and company profile"
+          >
+            <span className="aft-track">
+              <span className="aft-thumb" />
+              <span className="aft-label aft-label-personal">Personal Profile</span>
+              <span className="aft-label aft-label-company">Company Profile</span>
+            </span>
+          </button>
 
-            {/* Phone widths only (page 2): image removed entirely, text centered, bottom tag shown */}
-            {isPhoneWidth && (
-              <motion.div
-                className="about-mobile-tag"
-                animate={activeZone === 'about' ? { opacity: 1 } : { opacity: 0 }}
-                transition={{ duration: 0.9, delay: 1.15 }}
-              >
-                <span>Studio</span>
-                <span>/ 2024</span>
-              </motion.div>
-            )}
+          <div className="about-flip-outer">
+            <div className={`about-flip-inner${isAboutFlipped ? ' is-flipped' : ''}`}>
+              {/* FRONT — Personal (uses the current portrait) */}
+              <div className="glass-container about-flip-face about-flip-front">
+                <AboutCardFace
+                  active={activeZone === 'about'}
+                  isPhoneWidth={isPhoneWidth}
+                  eyebrow="Say Hello"
+                  titleLines={["Hi, I'm", 'Ali.']}
+                  description="I'm the person behind ArtsnFar — designing, coding, and building 3D worlds one detail at a time. This is where the studio's work meets the person creating it."
+                  stats={[['4+', 'Years'], ['50+', 'Projects'], ['1', 'Studio']]}
+                  mobileTagLines={['Ali', '/ Creator']}
+                  rightNode={
+                    <div className="about-image-frame">
+                      <div className="image-border-offset" />
+                      <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
+                      <div className="image-caption-tag"><span>Ali Ahmed</span></div>
+                    </div>
+                  }
+                />
+              </div>
+
+              {/* BACK — Company (uses the site logo, not a photo) */}
+              <div className="glass-container about-flip-face about-flip-back">
+                <AboutCardFace
+                  active={activeZone === 'about'}
+                  isPhoneWidth={isPhoneWidth}
+                  eyebrow="Est. 2024"
+                  titleLines={['We craft', 'experiences.']}
+                  description="From the first sketch to the final render, we create 3D visuals and animations designed to make ideas stand out. Every detail matters, and every project is built with care."
+                  stats={[['50+', 'Projects'], ['20+', 'Clients'], ['3', 'Certifications']]}
+                  mobileTagLines={['Studio', '/ 2024']}
+                  rightNode={
+                    <div className="about-image-frame about-logo-frame">
+                      <div className="image-border-offset" />
+                      <div className="about-logo-display">
+                        <img src="/logo.png" alt="ArtsnFar Studio logo" className="about-logo-img" />
+                      </div>
+                      <div className="image-caption-tag"><span>ArtsnFar / Studio</span></div>
+                    </div>
+                  }
+                />
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -2490,15 +2554,15 @@ export default function App() {
                 animate={activeZone === 'skills' ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
                 transition={{ duration: 0.9, delay: activeZone === 'skills' ? 0.82 : 0, ease: [0.16, 1, 0.3, 1] }}
               >
-                Where technical precision meets creative instinct — a curated set of tools
-                and disciplines refined across three years of multidisciplinary practice.
+                At ArtsnFar, we've built hands-on experience across industry-standard tools and creative techniques
+                over the year, allowing us to create professional 3D visuals, Simulations, CGI, and animations that bring ideas to life.
               </motion.p>
               <motion.div
                 className="about-stats"
                 animate={activeZone === 'skills' ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ duration: 0.9, delay: activeZone === 'skills' ? 1.0 : 0 }}
               >
-                {[['3+', 'Years'], ['12+', 'Tools'], ['5', 'Domains']].map(([n, l], i) => (
+                {[['4+', 'Years'], ['5+', 'Tools'], ['6', 'Domains']].map(([n, l], i) => (
                   <React.Fragment key={l}>
                     {i > 0 && <div className="stat-divider" />}
                     <div className="stat-item">
@@ -2541,9 +2605,6 @@ export default function App() {
               grayscale={false}
               overlayBlurColor="#0c0c0c"
               imageBorderRadius="10px"
-              openedImageBorderRadius="10px"
-              openedImageWidth={isMobile ? '220px' : '420px'}
-              openedImageHeight={isMobile ? '300px' : '520px'}
               maxVerticalRotationDeg={8}
               dragSensitivity={22}
               padFactor={0.22}

@@ -538,8 +538,8 @@ body * {
   position: relative;
   z-index: 1;
   background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: var(--radius-card);
   min-height: 480px;
@@ -562,6 +562,8 @@ body * {
   border: 1.5px solid rgba(0, 0, 0, 0.18);
   pointer-events: none;
   transition: all 0.55s var(--ease-out-expo);
+  z-index: 10;
+  transform: translateZ(1px);
 }
 
 .glass-container::before {
@@ -800,6 +802,166 @@ body * {
   line-height: 1.6;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   ABOUT CARD FLIP (Company Profile ⇄ Personal Profile)
+   .about-flip-front is a normal in-flow element — it determines
+   the box's height exactly the way the old .about-wrapper did.
+   .about-flip-back sits absolutely over that same box, so no
+   ancestor needs an explicit height for this to size correctly
+   in either the desktop (auto-height) or mobile (flex) layout.
+───────────────────────────────────────────────────────────── */
+.about-flip-outer {
+  position: relative;
+  width: 100%;
+  perspective: 2200px;
+}
+
+.about-card {
+  box-shadow: none !important;
+}
+
+.about-card .about-flip-outer {
+  margin-top: 0;
+}
+
+.about-card .glass-container {
+  padding-top: 4.1rem;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-card-front);
+}
+
+.about-flip-inner {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.about-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.about-flip-face {
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.about-flip-front {
+  position: relative;
+}
+
+.about-flip-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
+/* Toggle pill — floats at the top centre of the About card */
+.about-flip-toggle {
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aft-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  width: 264px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.about-flip-toggle:hover .aft-track {
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.11);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.aft-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 999px;
+  background: #0d0d0d;
+  transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: 0;
+}
+
+.about-flip-toggle.is-flipped .aft-thumb {
+  transform: translateX(100%);
+}
+
+.aft-label {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(13, 13, 13, 0.45);
+  transition: color 0.4s ease;
+  padding: 0 0.4rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.about-flip-toggle:not(.is-flipped) .aft-label-personal {
+  color: #f5f3ef;
+}
+
+.about-flip-toggle.is-flipped .aft-label-company {
+  color: #f5f3ef;
+}
+
+/* Front-face image slot displays the studio logo instead of a photo */
+.about-logo-display {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f5f3ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.4rem;
+}
+
+.about-logo-img {
+  width: 100%;
+  height: auto;
+  max-width: 180px;
+  object-fit: contain;
+  transition: transform 0.6s var(--ease-out-expo);
+}
+
+.about-logo-frame:hover .about-logo-img {
+  transform: scale(1.05);
+}
+
 /* FLUID BLOB */
 .fluid-reveal-container {
   position: relative;
@@ -970,6 +1132,14 @@ body * {
   .skills-grid {
     grid-template-columns: 1fr 1fr;
     gap: 1.4rem;
+  }
+
+  .about-card .about-flip-outer {
+    margin-top: 0;
+  }
+
+  .about-card .glass-container {
+    padding-top: 4.1rem;
   }
 }
 
@@ -1227,6 +1397,56 @@ body * {
     flex-shrink: 0;
     margin-top: auto;
     padding-top: 1.5rem;
+  }
+
+  /* ── About card flip — mobile ──────────────────────────────
+     .glass-container is a fixed-height flex column on phones, so
+     the height has to be threaded down through every wrapper the
+     same way the old single .about-wrapper received it. Scoped to
+     .about-card only — the Skills card has no flip wrapper. */
+  .about-card .about-flip-outer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 0;
+  }
+
+  .about-card .glass-container {
+    padding-top: 4.2rem;
+  }
+
+  .about-card .about-flip-inner {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .about-card .about-flip-front {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .about-card .about-flip-back {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .about-flip-toggle {
+    top: 0.6rem;
+  }
+
+  .about-flip-toggle .aft-track {
+    width: 208px;
+    height: 34px;
+  }
+
+  .about-flip-toggle .aft-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
   }
 
 }

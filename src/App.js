@@ -2303,18 +2303,68 @@ export default function App() {
     }
   }, [mobileSection]);
 
-  // Mobile: tap to advance section
+  // Mobile: tap to advance, swipe down to go back.
+  // This listens for touchstart/touchend in the CAPTURE phase instead
+  // of a 'click' — the page 4 DomeGallery's drag-to-rotate handlers
+  // call preventDefault()/stopPropagation() on touch events, which
+  // silently swallowed the click that tap-to-advance used to rely on
+  // and made it impossible to leave the Portfolio section. Capturing
+  // touch events at the document level runs before the gallery ever
+  // sees them, so this now works everywhere, including inside it.
+  // Movement/time thresholds tell a tap (advance) apart from a drag
+  // (rotate the dome, or do nothing); a clear vertical swipe outside
+  // the dome navigates forward/back like the arrow keys already do.
   useEffect(() => {
     if (!isMobile) return;
-    const handleTap = (e) => {
-      // Skip if tapping interactive elements, overlays, or buttons
-      if (e.target.closest('.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .sphere-root')) return;
-      // Skip if an overlay page is open
-      if (document.querySelector('.overlay-page')) return;
-      setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+    const EXCLUDE = '.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .sphere-root';
+    let start = null;
+
+    const onTouchStart = (e) => {
+      if (e.target.closest(EXCLUDE) || document.querySelector('.overlay-page')) {
+        start = null;
+        return;
+      }
+      const t = e.touches[0];
+      start = {
+        x: t.clientX,
+        y: t.clientY,
+        time: Date.now(),
+        inDome: !!e.target.closest('.pfz-dome-wrap'),
+      };
     };
-    document.addEventListener('click', handleTap);
-    return () => document.removeEventListener('click', handleTap);
+
+    const onTouchEnd = (e) => {
+      if (!start) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      const dt = Date.now() - start.time;
+      const { inDome } = start;
+      start = null;
+
+      // Quick, near-stationary touch = tap → advance to the next section.
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 500) {
+        setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+        return;
+      }
+
+      // Clear vertical swipe outside the dome (dragging inside the dome
+      // rotates the gallery, so it's excluded here) → navigate up/down.
+      if (!inDome && Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.5 && dt < 800) {
+        if (dy < 0) {
+          setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+        } else {
+          setMobileSection(prev => Math.max(prev - 1, 0));
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+    document.addEventListener('touchend', onTouchEnd, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart, true);
+      document.removeEventListener('touchend', onTouchEnd, true);
+    };
   }, []);
 
   // Mobile: force particles ready immediately (no 3D canvas)
@@ -2501,11 +2551,6 @@ export default function App() {
                           <span className="portrait-meta-name">Ali Ahmed</span>
                           <span className="portrait-meta-role">FX Artist · Elipse Studio</span>
                           <span className="portrait-meta-edu">Electronic Eng. · Dawood UET</span>
-                          <div className="portrait-meta-skills">
-                            <span>Houdini</span>
-                            <span>Blender</span>
-                            <span>Substance Painter</span>
-                          </div>
                         </div>
                       </div>
                       <div className="personal-socials">
@@ -2519,6 +2564,23 @@ export default function App() {
                             <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
                           </svg>
                         </a>
+                        {/* Software icons — same circular icon-badge
+                            style as the social icon above. Color/opacity
+                            for all three come from --skill-icon-color and
+                            --skill-icon-opacity in index.css. */}
+                        <div className="personal-socials-line" />
+                        <div className="personal-social-link" aria-label="Blender" title="Blender">
+                          <span className="personal-skill-icon" aria-hidden="true"
+                            style={{ '--icon-src': 'url(/icon/blender.svg)' }} />
+                        </div>
+                        <div className="personal-social-link" aria-label="Houdini" title="Houdini">
+                          <span className="personal-skill-icon" aria-hidden="true"
+                            style={{ '--icon-src': 'url(/icon/houdini.svg)' }} />
+                        </div>
+                        <div className="personal-social-link" aria-label="Substance Painter" title="Substance Painter">
+                          <span className="personal-skill-icon" aria-hidden="true"
+                            style={{ '--icon-src': 'url(/icon/substance-painter.svg)' }} />
+                        </div>
                       </div>
                     </div>
                   }

@@ -1628,15 +1628,22 @@ body * {
   }
 
   /* ── About card flip — mobile ──────────────────────────────
-     .glass-container is a fixed-height flex column on phones, so
-     the height has to be threaded down through every wrapper the
-     same way the old single .about-wrapper received it. Scoped to
-     .about-card only — the Skills card has no flip wrapper. */
+     Every wrapper gets a REAL height instead of being threaded
+     down via flex: 1 through nested auto-height flex containers.
+     That old chain collapsed toward 0px on iOS Safari because
+     flex-basis: 0% (what flex: 1 sets) overrides an explicit
+     height on the same element, and each wrapper was itself an
+     unstretched (auto-height) flex item of its own parent — so
+     there was nothing forcing the stack to actually be 72vh tall.
+     This mirrors how the Skills card (page 3) works: one element,
+     one definite height, no flex-basis math. Scoped to .about-card
+     only — the Skills card has no flip wrapper. */
+  .about-card {
+    height: 72vh;
+  }
+
   .about-card .about-flip-outer {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    height: 100%;
     margin-top: 0;
   }
 
@@ -1645,20 +1652,17 @@ body * {
   }
 
   .about-card .about-flip-inner {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    height: 100%;
   }
 
   .about-card .about-flip-front {
-    flex: 1;
-    min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
   }
 
   .about-card .about-flip-back {
+    height: 100%;
     display: flex;
     flex-direction: column;
   }

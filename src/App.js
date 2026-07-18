@@ -2488,7 +2488,7 @@ export default function App() {
                   isPhoneWidth={isPhoneWidth}
                   eyebrow="Say Hello"
                   titleLines={["Hi, I'm", 'Ali.']}
-                  description="The person behind ArtsnFar — an Electronic Engineer turned FX Artist, currently at Elipse Studio. I build 3D worlds and love meeting new people."
+                  description="I'm Ali Ahmed, the founder of ArtsnFar Studio. My background in Electronic Engineering taught me how things work; my passion for 3D art and CGI is about imagining what they could become. Today, I create visuals that help ideas, products, and brands stand out."
                   stats={[['4+', 'Years'], ['50+', 'Projects'], ['1', 'Studio']]}
                   mobileTagLines={['Ali', '/ Creator']}
                   rightNode={

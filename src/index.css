@@ -803,6 +803,234 @@ body * {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   PORTRAIT META — name / role / edu / skills shown below the
+   portrait inside the right panel. Replaces the old caption tag.
+───────────────────────────────────────────────────────────── */
+.portrait-meta {
+  margin-top: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.portrait-meta-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.portrait-meta-role,
+.portrait-meta-edu {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.42;
+  font-weight: 400;
+}
+
+.portrait-meta-role {
+  opacity: 0.55;
+}
+
+.portrait-meta-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.portrait-meta-skills span {
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(10, 10, 10, 0.1);
+  background: rgba(10, 10, 10, 0.04);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.45);
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PERSONAL PROFILE — right panel extras
+   Social links column that appears alongside the portrait.
+───────────────────────────────────────────────────────────── */
+
+/* Wrapper that stacks portrait + social column side by side */
+.personal-right-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 310px;
+}
+
+/* Portrait inside the wrap shouldn't compete with the socials column */
+.personal-right-wrap .about-image-frame {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+}
+
+/* Social icon column */
+.personal-socials {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.personal-socials-line {
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, rgba(10, 10, 10, 0.18));
+  margin-bottom: 0.15rem;
+}
+
+.personal-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(10, 10, 10, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(10, 10, 10, 0.55);
+  transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.personal-social-link:hover {
+  border-color: rgba(10, 10, 10, 0.4);
+  background: rgba(10, 10, 10, 0.07);
+  color: rgba(10, 10, 10, 0.9);
+  transform: translateY(-2px);
+}
+
+.personal-social-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ─── Personal bio badges (edu + role chips) ─── */
+.personal-bio-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: -0.6rem;
+  /* pull up slightly under the description */
+}
+
+.bio-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.05);
+  border: 1px solid rgba(10, 10, 10, 0.09);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.55);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bio-badge-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* ─── Personal skill chips ─── */
+.personal-skills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+  margin-top: -0.8rem;
+}
+
+.ps-chip {
+  padding: 0.2rem 0.58rem;
+  border-radius: 4px;
+  border: 1px solid rgba(10, 10, 10, 0.11);
+  background: rgba(10, 10, 10, 0.04);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.48);
+  font-weight: 500;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.ps-chip:hover {
+  background: rgba(10, 10, 10, 0.09);
+  color: rgba(10, 10, 10, 0.75);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COMPANY PROFILE — social links below logo
+───────────────────────────────────────────────────────────── */
+.company-socials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.company-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(10, 10, 10, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.5);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+
+.company-social-link:hover {
+  border-color: rgba(10, 10, 10, 0.38);
+  background: rgba(10, 10, 10, 0.06);
+  color: rgba(10, 10, 10, 0.85);
+  transform: translateY(-1px);
+}
+
+.company-social-link svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
    ABOUT CARD FLIP (Company Profile ⇄ Personal Profile)
    .about-flip-front is a normal in-flow element — it determines
    the box's height exactly the way the old .about-wrapper did.
@@ -943,7 +1171,7 @@ body * {
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 4px;
-  background: #f5f3ef;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

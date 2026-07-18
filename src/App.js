@@ -2126,7 +2126,7 @@ function PfCardInner({ item, hovered, index }) {
 // Renders one face (front = Company, back = Personal) of the
 // About card. Parametrized so the flip toggle can swap content
 // without duplicating the entrance-animation logic.
-function AboutCardFace({ active, isPhoneWidth, eyebrow, titleLines, description, stats, mobileTagLines, rightNode }) {
+function AboutCardFace({ active, isPhoneWidth, eyebrow, titleLines, description, stats, mobileTagLines, rightNode, extraLeft }) {
   return (
     <div className="about-wrapper">
       <motion.div
@@ -2172,6 +2172,14 @@ function AboutCardFace({ active, isPhoneWidth, eyebrow, titleLines, description,
             </React.Fragment>
           ))}
         </motion.div>
+        {extraLeft && (
+          <motion.div
+            animate={active ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.9, delay: 1.2 }}
+          >
+            {extraLeft}
+          </motion.div>
+        )}
       </motion.div>
       {!isPhoneWidth && (
         <>
@@ -2473,27 +2481,51 @@ export default function App() {
 
           <div className="about-flip-outer">
             <div className={`about-flip-inner${isAboutFlipped ? ' is-flipped' : ''}`}>
-              {/* FRONT — Personal (uses the current portrait) */}
+              {/* FRONT — Personal */}
               <div className="glass-container about-flip-face about-flip-front">
                 <AboutCardFace
                   active={activeZone === 'about'}
                   isPhoneWidth={isPhoneWidth}
                   eyebrow="Say Hello"
                   titleLines={["Hi, I'm", 'Ali.']}
-                  description="I'm the person behind ArtsnFar — designing, coding, and building 3D worlds one detail at a time. This is where the studio's work meets the person creating it."
+                  description="The person behind ArtsnFar — an Electronic Engineer turned FX Artist, currently at Elipse Studio. I build 3D worlds and love meeting new people."
                   stats={[['4+', 'Years'], ['50+', 'Projects'], ['1', 'Studio']]}
                   mobileTagLines={['Ali', '/ Creator']}
                   rightNode={
-                    <div className="about-image-frame">
-                      <div className="image-border-offset" />
-                      <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
-                      <div className="image-caption-tag"><span>Ali Ahmed</span></div>
+                    <div className="personal-right-wrap">
+                      <div className="about-image-frame">
+                        <div className="image-border-offset" />
+                        <FluidRevealImage baseImage="/WITHOUT.png" revealImage="/WITH.png" />
+                        {/* Caption block below portrait */}
+                        <div className="portrait-meta">
+                          <span className="portrait-meta-name">Ali Ahmed</span>
+                          <span className="portrait-meta-role">FX Artist · Elipse Studio</span>
+                          <span className="portrait-meta-edu">Electronic Eng. · Dawood UET</span>
+                          <div className="portrait-meta-skills">
+                            <span>Houdini</span>
+                            <span>Blender</span>
+                            <span>Substance Painter</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="personal-socials">
+                        <div className="personal-socials-line" />
+                        <a href="https://www.instagram.com/a.liahmed000/"
+                          target="_blank" rel="noopener noreferrer"
+                          className="personal-social-link" aria-label="Instagram">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <circle cx="12" cy="12" r="4" />
+                            <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                   }
                 />
               </div>
 
-              {/* BACK — Company (uses the site logo, not a photo) */}
+              {/* BACK — Company */}
               <div className="glass-container about-flip-face about-flip-back">
                 <AboutCardFace
                   active={activeZone === 'about'}
@@ -2504,12 +2536,44 @@ export default function App() {
                   stats={[['50+', 'Projects'], ['20+', 'Clients'], ['3', 'Certifications']]}
                   mobileTagLines={['Studio', '/ 2024']}
                   rightNode={
-                    <div className="about-image-frame about-logo-frame">
-                      <div className="image-border-offset" />
-                      <div className="about-logo-display">
-                        <img src="/logo.png" alt="ArtsnFar Studio logo" className="about-logo-img" />
+                    <div className="personal-right-wrap">
+                      <div className="about-image-frame about-logo-frame">
+                        <div className="image-border-offset" />
+                        <div className="about-logo-display">
+                          <img src="/logo.png" alt="ArtsnFar Studio logo" className="about-logo-img" />
+                        </div>
+                        <div className="image-caption-tag"><span>ArtsnFar / Studio</span></div>
                       </div>
-                      <div className="image-caption-tag"><span>ArtsnFar / Studio</span></div>
+                      <div className="personal-socials">
+                        <div className="personal-socials-line" />
+                        {/* Instagram */}
+                        <a href="https://www.instagram.com/artsnfar_studio?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                          target="_blank" rel="noopener noreferrer"
+                          className="personal-social-link" aria-label="Instagram">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                            <circle cx="12" cy="12" r="4" />
+                            <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+                          </svg>
+                        </a>
+                        {/* YouTube */}
+                        <a href="https://www.youtube.com/@ArtsnFar/shorts"
+                          target="_blank" rel="noopener noreferrer"
+                          className="personal-social-link" aria-label="YouTube">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-1.96C18.88 4 12 4 12 4s-6.88 0-8.6.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
+                            <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none" />
+                          </svg>
+                        </a>
+                        {/* ArtStation */}
+                        <a href="https://www.artstation.com/artsnfar_studio"
+                          target="_blank" rel="noopener noreferrer"
+                          className="personal-social-link" aria-label="ArtStation">
+                          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.164-1.333H9.419L21.598 22.54l1.92-3.325c.378-.58.482-.65.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z" />
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                   }
                 />

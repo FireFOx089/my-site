@@ -2724,7 +2724,7 @@ export default function App() {
           >
             <DomeGallery
               images={DOME_IMAGES}
-              fit={isMobile ? 0.85 : 1.2}
+              fit={isMobile ? 1.2 : 1.2}
               minRadius={isMobile ? 500 : 1200}
               maxRadius={2000}
               segments={26}

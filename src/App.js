@@ -1394,6 +1394,21 @@ function ContactPage({ onClose }) {
 }
 
 // ─── PORTFOLIO PAGE ──────────────────────────────────────────
+// Credits workflow: most projects share the same credit line, so it's
+// defined once below as DEFAULT_CREDITS. A project only needs its own
+// `credits: [...]` array if it's different from the default — add,
+// remove, or reorder rows freely, there's no fixed number of rows.
+//   credits: [
+//     { name: 'Ali Ahmed', role: 'Creative Direction' },
+//     { name: 'Collaborator Name', role: 'Photography' },
+//   ]
+const DEFAULT_CREDITS = [
+  { name: 'Ali Ahmed', role: 'Creative Direction' },
+  { name: 'Ali Ahmed', role: '3D Visualisation' },
+  { name: 'Ali Ahmed', role: 'LookDev' },
+  { name: 'Blender', role: 'Software' },
+];
+
 const PORTFOLIO_ITEMS = [
   // ── Architecture ──────────────────────────────────────────────────────────
   {
@@ -1530,12 +1545,27 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479336/Cap_Anim_gif01_uq2auu.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479337/Cap_Anim_gif02_oafhua.gif',
     ],
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Houdini', role: 'Software' },
+    ],
   },
   {
     id: 127, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#0d0c0a',
     label: 'Ahmed Foods Jam & Spread',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782671577/Jam_Spread_Edit_Main_Eng_VO_260413_-_frame_at_0m14s_zypxvi.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782671218/Jam_Spread_Edit_Main_Eng_Vo_260413_low_res_Credits_etektj.mp4',
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Bilal Lania, Waheed', role: 'Compositing' },
+      { name: 'Houdini, Maya, Nuke, After Effects', role: 'Software' },
+    ],
   },
 
   {
@@ -1546,6 +1576,14 @@ const PORTFOLIO_ITEMS = [
     images: [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672176/Jam_PB_fblddf.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672176/Jam_PB_fblddf.gif',
+    ],
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Bilal Lania, Waheed', role: 'Compositing' },
+      { name: 'Houdini, Maya, Nuke, After Effects', role: 'Software' },
     ],
   },
 
@@ -1558,6 +1596,14 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672740/VDB_nz3e0i.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782672740/VDB_nz3e0i.gif',
     ],
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Bilal Lania, Waheed', role: 'Compositing' },
+      { name: 'Houdini, Maya, Nuke, After Effects', role: 'Software' },
+    ],
   },
 
   {
@@ -1568,6 +1614,14 @@ const PORTFOLIO_ITEMS = [
     images: [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782673954/Strawberry_xwgvdr.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782673954/Strawberry_xwgvdr.gif',
+    ],
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Bilal Lania, Waheed', role: 'Compositing' },
+      { name: 'Houdini, Maya, Nuke, After Effects', role: 'Software' },
     ],
   },
   // ── Product Visuals ──────────────────────────────────────────────────────────
@@ -1582,6 +1636,14 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476188/Car_Anim03_p4ojot.png',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476188/Car_Anim04_jfu7zs.png',
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Compositing' },
+      { name: 'Blender, After Effects', role: 'Software' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+    ],
   },
   {
     id: 126, type: 'video', cat: 'Simulation FX', aspect: '16/9', bg: '#111114',
@@ -1592,7 +1654,15 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668831/Tiger_vfx_PB_sizo1g.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668831/Tiger_vfx_PB_sizo1g.gif',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/v1782668833/Tiger_vfx_PB02_mceqiw.gif',
-    ]
+    ],
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Rameez Rafiq', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Waheed', role: 'Compositing' },
+      { name: 'Houdini, Maya, Nuke, After Effects', role: 'Software' },
+    ],
   },
   {
     id: 103, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0a0e',
@@ -1604,21 +1674,47 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477860/0148_fvkfyj.png',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477863/0074_gxxg8n.png',
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Compositing' },
+      { name: 'Blender, After Effects', role: 'Software' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+    ],
   },
   {
     id: 104, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#141414',
     label: 'Product — 39',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477896/39_ngy8il.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 105, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#161616',
     label: 'Product — 41',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477902/41_cn8azp.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 106, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#131313',
     label: 'Product — 40',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477897/40_mnvk3j.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 107, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#080808',
@@ -1633,6 +1729,13 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782476567/0001-0240_f5js4k.mp4',
 
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 108, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0a10',
@@ -1645,12 +1748,26 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479752/A20_fvufj8.png',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479757/A17_z6qbbf.png',
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 109, type: 'video', cat: 'Product Visuals', aspect: '16/9', bg: '#0d1014',
     label: 'SmartMed Arm',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502856/SMARTMED_ARM_Animation_-_frame_at_0m10s_rcfvfm.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782479429/SMARTMED_ARM_Animation_s2q0iv.mp4',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 110, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0f18',
@@ -1660,11 +1777,23 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479477/Tennis_cjbhzy.png',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479475/Tennis02_k4atlv.png',
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 111, type: 'image', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
     label: 'Earbuds',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495227/earbuds_fv0cbr.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 112, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#100c08',
@@ -1674,32 +1803,69 @@ const PORTFOLIO_ITEMS = [
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495269/Ittar_ukavja.png',
       'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495274/Ittar02_rdukkc.png',
     ],
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 113, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c0c0e',
     label: 'Shilajeet',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495267/shilajet_eyxfn4.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 114, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#10100e',
     label: 'Creatine',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Creatine_msouxm.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 115, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0e0e0a',
     label: 'Bag',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495591/bag_02_vit6uj.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 116, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c1010',
     label: 'Inverter',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495598/inverter_02_ktzraw.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender, Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 117, type: 'video', cat: 'Product Visuals', aspect: '9/16', bg: '#0a0a0a',
     label: 'Product Reel',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502860/IMG_1139_-_frame_at_0m8s_d1foip.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782495701/IMG_1139_lzmpgz.mp4',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 118, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0e0a14',
@@ -1720,6 +1886,12 @@ const PORTFOLIO_ITEMS = [
     id: 121, type: 'image', cat: 'Product Visuals', aspect: '4/5', bg: '#0c0c10',
     label: 'Shoes',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Shoes_k6bfbn.png',
+    credits: [
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: '3D Visualisation' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Blender,  Photoshop', role: 'Software' },
+    ],
   },
   {
     id: 122, type: 'image', cat: 'Product Visuals', aspect: '16/9', bg: '#0a0e18',
@@ -1731,18 +1903,39 @@ const PORTFOLIO_ITEMS = [
     label: 'Taser Machine',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661558/Taser_jthiqw.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782661503/Taser_machine_gy6muy.mp4',
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 124, type: 'video', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
     label: 'Taser Machine BreakDown',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661798/Break_down_-_frame_at_0m8s_qvbafo.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/f_auto,q_auto,w_1600/v1782661788/Break_down_yekkj4.mp4',
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Ali Ahmed', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Animation' },
+      { name: 'Blender', role: 'Software' },
+    ],
   },
   {
     id: 125, type: 'video', cat: 'Product Visuals', aspect: '1/1', bg: '#0e0e0e',
     label: 'Fendi Bag CGI',
     img: 'https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782662201/Fendi_BagV02_-_frame_at_0m2s_bwalxm.jpg',
     video: 'https://res.cloudinary.com/dmbgk0uha/video/upload/v1782661932/Fendi_BagV02_andqh9.mp4',
+    credits: [
+      { name: 'Elipse Studio', role: 'Project of' },
+      { name: 'Bilal Lania', role: 'Creative Direction' },
+      { name: 'Ali Ahmed', role: 'LookDev' },
+      { name: 'Ali Ahmed', role: 'Simulation' },
+      { name: 'Blender, Houdini', role: 'Software' },
+    ],
   },
   // ── Visualization (placeholders — will be replaced when links arrive) ──────
   { id: 201, type: 'video', cat: 'Visualization', aspect: '16/9', bg: '#0d0d0d', label: 'Visualization — coming soon' },
@@ -1918,28 +2111,24 @@ function PortfolioPage({ onClose }) {
 
                   <div className="lb-divider" />
 
-                  {/* Credits section — placeholder rows, fill content later */}
-                  <div className="lb-credits">
-                    <p className="lb-credits-heading">Project Credits</p>
-                    <div className="lb-credit-row">
-                      <span className="lb-credit-name">— —</span>
-                      <span className="lb-credit-role">Creative Director</span>
-                    </div>
-                    <div className="lb-credit-row">
-                      <span className="lb-credit-name">— —</span>
-                      <span className="lb-credit-role">Lead Architect</span>
-                    </div>
-                    <div className="lb-credit-row">
-                      <span className="lb-credit-name">— —</span>
-                      <span className="lb-credit-role">3D Visualisation</span>
-                    </div>
-                    <div className="lb-credit-row">
-                      <span className="lb-credit-name">— —</span>
-                      <span className="lb-credit-role">Photography</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const credits = selected.credits || DEFAULT_CREDITS;
+                    return credits.length > 0 && (
+                      <>
+                        <div className="lb-credits">
+                          <p className="lb-credits-heading">Project Credits</p>
+                          {credits.map((c, i) => (
+                            <div className="lb-credit-row" key={i}>
+                              <span className="lb-credit-name">{c.name}</span>
+                              <span className="lb-credit-role">{c.role}</span>
+                            </div>
+                          ))}
+                        </div>
 
-                  <div className="lb-divider" />
+                        <div className="lb-divider" />
+                      </>
+                    );
+                  })()}
 
                   {/* Scroll hint */}
                   <p className="lb-scroll-hint">
@@ -2724,7 +2913,7 @@ export default function App() {
           >
             <DomeGallery
               images={DOME_IMAGES}
-              fit={isMobile ? 1.2 : 1.2}
+              fit={isMobile ? 0.85 : 1.2}
               minRadius={isMobile ? 500 : 1200}
               maxRadius={2000}
               segments={26}

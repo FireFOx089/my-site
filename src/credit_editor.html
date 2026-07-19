@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Project Credits Editor</title>
+<style>
+  :root {
+    --ink: #16140f;
+    --paper: #f5f3ee;
+    --line: rgba(22,20,15,0.12);
+    --line-soft: rgba(22,20,15,0.07);
+    --accent: #b5502e;
+    --muted: rgba(22,20,15,0.5);
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1.25rem 6rem; }
+
+  .head { margin-bottom: 1.75rem; }
+  .head h1 {
+    font-size: 1.4rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.01em;
+  }
+  .head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 0.6rem;
+    background: rgba(245,243,238,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 0.85rem 1.25rem;
+    margin: 0 -1.25rem 1.5rem;
+    flex-wrap: wrap;
+  }
+  .bar input[type="search"] {
+    flex: 1 1 180px;
+    min-width: 140px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--card);
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+  .bar input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .chip {
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .progress {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .progress b { color: var(--ink); }
+
+  .default-panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1.75rem;
+  }
+  .default-panel h2 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 0 0 0.2rem;
+    color: var(--muted);
+  }
+  .default-panel .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 0 0 0.9rem;
+  }
+
+  .rows { display: flex; flex-direction: column; gap: 0.5rem; }
+  .row {
+    display: flex; gap: 0.5rem; align-items: center;
+  }
+  .row input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    background: var(--paper);
+    color: var(--ink);
+    width: 100%;
+  }
+  .row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row .name { flex: 1.1; }
+  .row .role { flex: 1; }
+  .row button.rm {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .row button.rm:hover { background: #fbeae4; color: var(--accent); border-color: var(--accent); }
+
+  .add-row {
+    align-self: flex-start;
+    margin-top: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    border: 1px dashed var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.76rem;
+    cursor: pointer;
+  }
+  .add-row:hover { border-color: var(--accent); color: var(--accent); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.9rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .card .thumb {
+    height: 130px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    background: #e5e1d6;
+  }
+  .card .thumb.placeholder {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .card .body { padding: 0.85rem 0.9rem 0.95rem; }
+  .card .top-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+  }
+  .card .title { font-size: 0.9rem; font-weight: 600; line-height: 1.25; }
+  .card .cat {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  .badge {
+    flex: 0 0 auto;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .badge.custom { background: #fbeae4; border-color: var(--accent); color: var(--accent); }
+
+  .mode-toggle {
+    display: flex; gap: 0.4rem; margin-bottom: 0.7rem;
+  }
+  .mode-toggle button {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .mode-toggle button.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .default-preview {
+    font-size: 0.76rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .default-preview span { color: var(--ink); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 3rem 1rem;
+  }
+
+  .export-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.85rem 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .export-bar .count { font-size: 0.78rem; opacity: 0.75; margin-right: auto; }
+  .export-bar button {
+    padding: 0.55rem 1rem;
+    border-radius: 7px;
+    border: 1px solid rgba(245,243,238,0.25);
+    background: transparent;
+    color: var(--paper);
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .export-bar button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .export-bar button:hover { opacity: 0.85; }
+  .export-bar .saved-note {
+    font-size: 0.72rem;
+    opacity: 0.6;
+  }
+
+  .toast {
+    position: fixed; bottom: 4.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper);
+    padding: 0.55rem 1rem; border-radius: 999px;
+    font-size: 0.78rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 40;
+  }
+  .toast.show { opacity: 1; }
+
+  textarea.export-out {
+    width: 100%;
+    min-height: 160px;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    background: #fff;
+    color: var(--ink);
+  }
+  .export-modal {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(22,20,15,0.55);
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 1.5rem;
+  }
+  .export-modal.show { display: flex; }
+  .export-modal .panel {
+    background: var(--paper);
+    border-radius: 12px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow: auto;
+    padding: 1.5rem;
+  }
+  .export-modal h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+  .export-modal p { margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+  .export-modal .modal-actions {
+    display: flex; gap: 0.5rem; margin-top: 0.75rem;
+  }
+  .export-modal .modal-actions button {
+    padding: 0.5rem 0.9rem;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .export-modal .modal-actions button.primary {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .export-modal .close {
+    position: absolute; top: 1rem; right: 1.2rem;
+    background: none; border: none; font-size: 1.1rem;
+    cursor: pointer; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Project Credits Editor</h1>
+    <p>Fill each project's credits once — everything autosaves in this browser as you go, so you can close this and come back later. When you're done, hit <b>Copy Export JSON</b> at the bottom and paste it back to Claude in chat to apply it to your site automatically.</p>
+  </div>
+
+  <div class="default-panel">
+    <h2>Default credits</h2>
+    <p class="hint">Used by every project that doesn't have its own custom credits below.</p>
+    <div class="rows" id="default-rows"></div>
+    <button class="add-row" id="default-add">+ Add row</button>
+  </div>
+
+  <div class="bar">
+    <input type="search" id="search" placeholder="Search projects…" />
+    <div id="filters" style="display:flex; gap:0.4rem; flex-wrap:wrap;"></div>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="empty" style="display:none;">No projects match that search.</div>
+</div>
+
+<div class="export-bar">
+  <span class="count" id="export-count">0 of 0 projects customized</span>
+  <span class="saved-note" id="saved-note"></span>
+  <button id="reset-all">Reset all</button>
+  <button class="primary" id="export-btn">Copy Export JSON</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="export-modal" id="export-modal">
+  <div class="panel" style="position:relative;">
+    <button class="close" id="modal-close">✕</button>
+    <h3>Export ready</h3>
+    <p>Copied to your clipboard. Paste this whole block back to Claude in chat and say "apply these credits" — it'll merge it into your project file automatically. Nothing here needs to be edited by hand.</p>
+    <textarea class="export-out" id="export-out" readonly></textarea>
+    <div class="modal-actions">
+      <button id="modal-copy">Copy again</button>
+      <button id="modal-download" class="primary">Download .json instead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROJECTS = [{"id": 1, "label": "Container Shop I", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058391/54682_1_dmxunl.png"}, {"id": 2, "label": "Container Shop II", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058394/Y3_rlaxbq.png"}, {"id": 3, "label": "3D Floorplan \u2014 03", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058343/3d_Floorplan_03_owg2r4.png"}, {"id": 4, "label": "3D Floorplan \u2014 02", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782058338/3d_Floorplan_02_s2tcny.png"}, {"id": 5, "label": "Lavish Interior \u2014 06", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405444/Lavish_interior_06_yhr7gs.png"}, {"id": 6, "label": "Lavish Interior \u2014 05", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405446/Lavish_interior_05_02_umdjfh.png"}, {"id": 7, "label": "Lavish Interior \u2014 01", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405443/Lavish_interior_01_q6yq3t.png"}, {"id": 8, "label": "Lavish Interior \u2014 04", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405436/Lavish_interior_04_yoiuzu.png"}, {"id": 9, "label": "Lavish Interior \u2014 02", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405427/Lavish_interior_02_v6mcgj.png"}, {"id": 10, "label": "Lavish Interior \u2014 03", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405423/Lavish_interior_03_mcde1q.png"}, {"id": 11, "label": "Lavish Interior \u2014 07", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405438/Lavish_interior_07_md4yju.png"}, {"id": 12, "label": "Interior \u2014 03", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405433/interior_03_n4tg8l.png"}, {"id": 13, "label": "Interior \u2014 01", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405417/interior_01_mrw15x.png"}, {"id": 14, "label": "Interior \u2014 02", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405416/interior_02_lfdbed.png"}, {"id": 15, "label": "Tennis Court", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782405442/Tennis_Court_tgcpbq.png"}, {"id": 16, "label": "Interior \u2014 04", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782407809/interior_04_fqsry1.png"}, {"id": 17, "label": "Interior \u2014 08", "cat": "Architecture", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782408971/interior_08_t3eijs.png"}, {"id": 102, "label": "Cap Animation", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502857/Cap_Anim_gif01_-_frame_at_0m1s_vgsm6n.jpg"}, {"id": 127, "label": "Ahmed Foods Jam & Spread", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782671577/Jam_Spread_Edit_Main_Eng_VO_260413_-_frame_at_0m14s_zypxvi.jpg"}, {"id": 128, "label": "Jam Flip Simulation", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782672262/Jam_Flip_Simulation_-_frame_at_0m0s_kjkfu3.jpg"}, {"id": 129, "label": "Raspberry Animation and VDB Simulation", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782672766/Raspberry_Animation_and_VDB_Simulation_-_frame_at_0m1s_zapklq.jpg"}, {"id": 130, "label": "Strawberry RBD Simulation", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782673861/Strawberry_RBD_Simulation_-_frame_at_0m1s_qosi9n.jpg"}, {"id": 101, "label": "Car Animation", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476197/Car_Anim02_ggoazs.png"}, {"id": 126, "label": "Tiger VFX", "cat": "Simulation FX", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782667956/SH13_-_frame_at_0m5s_mjovfe.jpg"}, {"id": 103, "label": "Final Render", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477863/0074_gxxg8n.png"}, {"id": 104, "label": "Product \u2014 39", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477896/39_ngy8il.png"}, {"id": 105, "label": "Product \u2014 41", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477902/41_cn8azp.png"}, {"id": 106, "label": "Product \u2014 40", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782477897/40_mnvk3j.png"}, {"id": 107, "label": "Composition", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782476642/Q3_fmee4a.png"}, {"id": 108, "label": "Headphones", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502858/headphones0001-0683_-_frame_at_0m2s_ezxryr.jpg"}, {"id": 109, "label": "SmartMed Arm", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502856/SMARTMED_ARM_Animation_-_frame_at_0m10s_rcfvfm.jpg"}, {"id": 110, "label": "Tennis", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782479477/Tennis_cjbhzy.png"}, {"id": 111, "label": "Earbuds", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495227/earbuds_fv0cbr.png"}, {"id": 112, "label": "Ittar", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495269/Ittar_ukavja.png"}, {"id": 113, "label": "Shilajeet", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495267/shilajet_eyxfn4.png"}, {"id": 114, "label": "Creatine", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Creatine_msouxm.png"}, {"id": 115, "label": "Bag", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495591/bag_02_vit6uj.png"}, {"id": 116, "label": "Inverter", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495598/inverter_02_ktzraw.png"}, {"id": 117, "label": "Product Reel", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782502860/IMG_1139_-_frame_at_0m8s_d1foip.jpg"}, {"id": 118, "label": "Tech Throne", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495280/Tech_Throne_kwygxh.png"}, {"id": 119, "label": "Chair", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495639/chair_p1byp5.png"}, {"id": 120, "label": "Wheel", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495724/wheel_rurszb.png"}, {"id": 121, "label": "Shoes", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495262/Shoes_k6bfbn.png"}, {"id": 122, "label": "PS4", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782495257/PS4_tq1vr1.png"}, {"id": 123, "label": "Taser Machine", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661558/Taser_jthiqw.jpg"}, {"id": 124, "label": "Taser Machine BreakDown", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782661798/Break_down_-_frame_at_0m8s_qvbafo.jpg"}, {"id": 125, "label": "Fendi Bag CGI", "cat": "Product Visuals", "img": "https://res.cloudinary.com/dmbgk0uha/image/upload/f_auto,q_auto,w_1600/v1782662201/Fendi_BagV02_-_frame_at_0m2s_bwalxm.jpg"}, {"id": 201, "label": "Visualization \u2014 coming soon", "cat": "Visualization"}, {"id": 202, "label": "Visualization \u2014 coming soon", "cat": "Visualization"}, {"id": 203, "label": "Visualization \u2014 coming soon", "cat": "Visualization"}]
+;
+
+const DEFAULT_SEED = [
+  { name: 'Ali Ahmed', role: 'Creative Direction' },
+  { name: 'Ali Ahmed', role: '3D Visualisation' },
+];
+
+let defaultCredits = DEFAULT_SEED.map(r => ({ ...r }));
+let overrides = {}; // id -> [{name, role}, ...]  (only for customized projects)
+let activeFilter = 'All';
+let searchQuery = '';
+let saveTimer = null;
+
+const FILTERS = ['All', ...Array.from(new Set(PROJECTS.map(p => p.cat)))];
+
+function debounceSave() {
+  clearTimeout(saveTimer);
+  document.getElementById('saved-note').textContent = 'saving…';
+  saveTimer = setTimeout(async () => {
+    try {
+      await window.storage.set('creditEditor:defaultCredits', JSON.stringify(defaultCredits), false);
+      await window.storage.set('creditEditor:overrides', JSON.stringify(overrides), false);
+      document.getElementById('saved-note').textContent = 'saved';
+    } catch (e) {
+      document.getElementById('saved-note').textContent = 'save failed';
+    }
+  }, 350);
+}
+
+async function loadState() {
+  try {
+    const d = await window.storage.get('creditEditor:defaultCredits', false);
+    if (d && d.value) defaultCredits = JSON.parse(d.value);
+  } catch (e) {}
+  try {
+    const o = await window.storage.get('creditEditor:overrides', false);
+    if (o && o.value) overrides = JSON.parse(o.value);
+  } catch (e) {}
+  renderDefault();
+  renderFilters();
+  renderGrid();
+  updateProgress();
+}
+
+function renderDefault() {
+  const wrap = document.getElementById('default-rows');
+  wrap.innerHTML = '';
+  defaultCredits.forEach((row, i) => {
+    wrap.appendChild(makeRow(row, i, defaultCredits, {
+      onRemove: () => { renderDefault(); renderGrid(); }
+    }));
+  });
+}
+
+// Refresh the "Default" preview text on project cards once you're done
+// editing a default-credit field (on blur), instead of on every keystroke —
+// re-rendering while typing is what was stealing focus after one letter.
+document.getElementById('default-rows').addEventListener('focusout', () => {
+  setTimeout(() => {
+    if (!document.getElementById('default-rows').contains(document.activeElement)) {
+      renderGrid();
+    }
+  }, 0);
+});
+
+document.getElementById('default-add').addEventListener('click', () => {
+  defaultCredits.push({ name: '', role: '' });
+  renderDefault();
+  debounceSave();
+});
+
+function makeRow(row, index, arr, { onRemove } = {}) {
+  const div = document.createElement('div');
+  div.className = 'row';
+
+  const nameInput = document.createElement('input');
+  nameInput.className = 'name';
+  nameInput.placeholder = 'Name';
+  nameInput.value = row.name || '';
+  nameInput.addEventListener('input', () => {
+    arr[index].name = nameInput.value;
+    debounceSave();
+  });
+
+  const roleInput = document.createElement('input');
+  roleInput.className = 'role';
+  roleInput.placeholder = 'Role';
+  roleInput.value = row.role || '';
+  roleInput.addEventListener('input', () => {
+    arr[index].role = roleInput.value;
+    debounceSave();
+  });
+
+  const rm = document.createElement('button');
+  rm.className = 'rm';
+  rm.textContent = '✕';
+  rm.title = 'Remove row';
+  rm.addEventListener('click', () => {
+    arr.splice(index, 1);
+    debounceSave();
+    onRemove && onRemove();
+  });
+
+  div.appendChild(nameInput);
+  div.appendChild(roleInput);
+  div.appendChild(rm);
+  return div;
+}
+
+function renderFilters() {
+  const wrap = document.getElementById('filters');
+  wrap.innerHTML = '';
+  FILTERS.forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (f === activeFilter ? ' active' : '');
+    chip.textContent = f;
+    chip.addEventListener('click', () => {
+      activeFilter = f;
+      renderFilters();
+      renderGrid();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim().toLowerCase();
+  renderGrid();
+});
+
+function updateProgress() {
+  const customCount = Object.keys(overrides).length;
+  document.getElementById('progress').innerHTML =
+    '<b>' + customCount + '</b> of ' + PROJECTS.length + ' customized';
+  document.getElementById('export-count').textContent =
+    customCount + ' of ' + PROJECTS.length + ' projects customized (rest use default)';
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const list = PROJECTS.filter(p => {
+    if (activeFilter !== 'All' && p.cat !== activeFilter) return false;
+    if (searchQuery && !p.label.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    if (p.img) {
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.loading = 'lazy';
+      img.src = p.img;
+      img.alt = p.label;
+      card.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'thumb placeholder';
+      ph.textContent = 'No image yet';
+      card.appendChild(ph);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'body';
+
+    const topRow = document.createElement('div');
+    topRow.className = 'top-row';
+    const titleWrap = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = p.label;
+    const cat = document.createElement('div');
+    cat.className = 'cat';
+    cat.textContent = p.cat;
+    titleWrap.appendChild(title);
+    titleWrap.appendChild(cat);
+
+    const isCustom = !!overrides[p.id];
+    const badge = document.createElement('div');
+    badge.className = 'badge' + (isCustom ? ' custom' : '');
+    badge.textContent = isCustom ? 'Custom' : 'Default';
+
+    topRow.appendChild(titleWrap);
+    topRow.appendChild(badge);
+    body.appendChild(topRow);
+
+    const toggle = document.createElement('div');
+    toggle.className = 'mode-toggle';
+    const btnDefault = document.createElement('button');
+    btnDefault.textContent = 'Use default';
+    btnDefault.className = isCustom ? '' : 'active';
+    const btnCustom = document.createElement('button');
+    btnCustom.textContent = 'Custom';
+    btnCustom.className = isCustom ? 'active' : '';
+
+    btnDefault.addEventListener('click', () => {
+      if (overrides[p.id]) {
+        delete overrides[p.id];
+        debounceSave();
+        updateProgress();
+        renderGrid();
+      }
+    });
+    btnCustom.addEventListener('click', () => {
+      if (!overrides[p.id]) {
+        overrides[p.id] = defaultCredits.map(r => ({ ...r }));
+        debounceSave();
+        updateProgress();
+        renderGrid();
+      }
+    });
+    toggle.appendChild(btnDefault);
+    toggle.appendChild(btnCustom);
+    body.appendChild(toggle);
+
+    if (isCustom) {
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+      overrides[p.id].forEach((row, i) => {
+        rows.appendChild(makeRow(row, i, overrides[p.id], {
+          onRemove: () => { renderGrid(); }
+        }));
+      });
+      body.appendChild(rows);
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-row';
+      addBtn.textContent = '+ Add row';
+      addBtn.addEventListener('click', () => {
+        overrides[p.id].push({ name: '', role: '' });
+        debounceSave();
+        renderGrid();
+      });
+      body.appendChild(addBtn);
+    } else {
+      const preview = document.createElement('div');
+      preview.className = 'default-preview';
+      preview.innerHTML = defaultCredits.map(r =>
+        (r.name || '—') + ' <span>· ' + (r.role || '—') + '</span>'
+      ).join('<br/>');
+      body.appendChild(preview);
+    }
+
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function buildExport() {
+  const cleanRows = (arr) => arr
+    .map(r => ({ name: (r.name || '').trim(), role: (r.role || '').trim() }))
+    .filter(r => r.name || r.role);
+  const out = {
+    defaultCredits: cleanRows(defaultCredits),
+    overrides: {}
+  };
+  Object.keys(overrides).forEach(id => {
+    const rows = cleanRows(overrides[id]);
+    if (rows.length) out.overrides[id] = rows;
+  });
+  return JSON.stringify(out, null, 2);
+}
+
+document.getElementById('export-btn').addEventListener('click', async () => {
+  const json = buildExport();
+  document.getElementById('export-out').value = json;
+  document.getElementById('export-modal').classList.add('show');
+  try {
+    await navigator.clipboard.writeText(json);
+    showToast('Copied to clipboard');
+  } catch (e) {
+    showToast('Select the text below and copy manually');
+  }
+});
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('export-modal').classList.remove('show');
+});
+
+document.getElementById('modal-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById('export-out').value);
+    showToast('Copied to clipboard');
+  } catch (e) {
+    showToast('Could not copy — select manually');
+  }
+});
+
+document.getElementById('modal-download').addEventListener('click', () => {
+  const json = document.getElementById('export-out').value;
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'project-credits.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('reset-all').addEventListener('click', async () => {
+  if (!confirm('Clear all custom credits and reset the default? This cannot be undone.')) return;
+  defaultCredits = DEFAULT_SEED.map(r => ({ ...r }));
+  overrides = {};
+  renderDefault();
+  updateProgress();
+  renderGrid();
+  debounceSave();
+});
+
+loadState();
+</script>
+</body>
+</html>

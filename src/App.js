@@ -2017,24 +2017,25 @@ export default function App() {
     }
   }, [mobileSection]);
 
-  // Mobile: tap to advance, swipe down to go back.
-  // This listens for touchstart/touchend in the CAPTURE phase instead
-  // of a 'click' — the page 4 DomeGallery's drag-to-rotate handlers
-  // call preventDefault()/stopPropagation() on touch events, which
-  // silently swallowed the click that tap-to-advance used to rely on
-  // and made it impossible to leave the Portfolio section. Capturing
-  // touch events at the document level runs before the gallery ever
-  // sees them, so this now works everywhere, including inside it.
-  // Movement/time thresholds tell a tap (advance) apart from a drag
-  // (rotate the dome, or do nothing); a clear vertical swipe outside
-  // the dome navigates forward/back like the arrow keys already do.
+  // Mobile: gesture-based section navigation.
+  // - Tap to advance on pages 1, 2, 3 (Hero, About, Skills).
+  // - On Page 4 (Portfolio / Dome): dragging horizontally rotates the 3D gallery
+  //   without accidental page jumps; swiping UP smoothly advances to Page 5 (Contact),
+  //   and a dedicated "SWIPE UP" floating pill at the bottom gives a clear visual + tap target.
+  // - Swiping DOWN on any section goes back to the previous section.
+  const mobileSectionRef = useRef(mobileSection);
+  useEffect(() => {
+    mobileSectionRef.current = mobileSection;
+  }, [mobileSection]);
+
   useEffect(() => {
     if (!isMobile) return;
-    const EXCLUDE = '.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .sphere-root';
+    const EXCLUDE = '.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .pfz-mobile-swipe-pill';
     let start = null;
 
     const onTouchStart = (e) => {
-      if (e.target.closest(EXCLUDE) || document.querySelector('.overlay-page')) {
+      // Don't capture when a modal overlay is open or interacting with standard controls
+      if (document.querySelector('.overlay-page') || e.target.closest(EXCLUDE)) {
         start = null;
         return;
       }
@@ -2043,7 +2044,7 @@ export default function App() {
         x: t.clientX,
         y: t.clientY,
         time: Date.now(),
-        inDome: !!e.target.closest('.pfz-dome-wrap'),
+        inDome: !!e.target.closest('.pfz-dome-wrap, .sphere-root'),
       };
     };
 
@@ -2056,20 +2057,34 @@ export default function App() {
       const { inDome } = start;
       start = null;
 
-      // Quick, near-stationary touch = tap → advance to the next section.
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 500) {
-        setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+
+      // 1. CLEAR VERTICAL SWIPE (works across all sections, including over the dome!)
+      // Dominant vertical motion over threshold -> navigate forward (up) or backward (down)
+      if (absY > 38 && absY > absX * 1.2 && dt < 800) {
+        if (dy < 0) {
+          // Swipe up → Next section
+          setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
+        } else {
+          // Swipe down → Previous section
+          setMobileSection(prev => Math.max(prev - 1, 0));
+        }
         return;
       }
 
-      // Clear vertical swipe outside the dome (dragging inside the dome
-      // rotates the gallery, so it's excluded here) → navigate up/down.
-      if (!inDome && Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.5 && dt < 800) {
-        if (dy < 0) {
-          setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
-        } else {
-          setMobileSection(prev => Math.max(prev - 1, 0));
+      // 2. TAP GESTURE (quick, near-stationary touch)
+      if (absX < 12 && absY < 12 && dt < 450) {
+        const currentSection = MOBILE_SECTIONS[mobileSectionRef.current];
+        // On portfolio (page 4), touches inside the dome are for interacting with the 3D gallery,
+        // so we don't accidentally navigate away on a simple touch.
+        // Users advance via swipe up, or tapping the dedicated floating "SWIPE UP" pill.
+        if (currentSection === 'portfolio' && inDome) {
+          return;
         }
+
+        // On all other pages (and touches outside the dome), advance to the next section
+        setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1));
       }
     };
 
@@ -2499,6 +2514,25 @@ export default function App() {
               )}
             </motion.button>
           </div>
+
+          {/* Mobile navigation visual indicator: SWIPE UP */}
+          {isMobile && (
+            <motion.button
+              className="pfz-mobile-swipe-pill"
+              initial={{ opacity: 0, y: 14 }}
+              animate={activeZone === 'portfolio' ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+              transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              onClick={() => setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1))}
+              aria-label="Swipe up or tap to continue to Contact"
+            >
+              <div className="pfz-swipe-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="pfz-swipe-arrow">
+                  <path d="M18 15l-6-6-6 6" />
+                </svg>
+              </div>
+              <span className="pfz-swipe-text">SWIPE UP</span>
+            </motion.button>
+          )}
         </div>
       </div>
 

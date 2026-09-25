@@ -2081,6 +2081,68 @@ body * {
   }
 }
 
+/* ─── MOBILE SWIPE UP PILL (PAGE 4 / PORTFOLIO) ─── */
+.pfz-mobile-swipe-pill {
+  all: unset;
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 1.4rem 0.65rem;
+  background: rgba(18, 18, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s var(--ease-out-expo), border-color 0.3s var(--ease-out-expo), transform 0.2s ease;
+}
+
+.pfz-mobile-swipe-pill:active {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateX(-50%) scale(0.95);
+}
+
+.pfz-swipe-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.95);
+  animation: pfzSwipeUpBounce 1.8s ease-in-out infinite;
+}
+
+@keyframes pfzSwipeUpBounce {
+  0%, 100% {
+    transform: translateY(2px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.pfz-swipe-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.82);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+
 /* ─────────────────────────────────────────────────────────────
    GLOBAL DECORATION
 ───────────────────────────────────────────────────────────── */
@@ -3095,13 +3157,9 @@ body::after {
 .lb-film-img-wrap {
   position: relative;
   width: 100%;
-  /* Changed from calc(92vh - 3rem) — that was the same height as the hero,
-     pushing every GIF/image far below the fold and making them invisible.
-     height:auto lets each item shrink to its content; max-height caps very
-     tall portrait GIFs at 70vh so they stay readable without scrolling miles. */
-  height: auto;
-  min-height: 180px;
-  max-height: 70vh;
+  /* Match the hero image height so every image looks equally large */
+  height: calc(92vh - 3rem);
+  max-height: calc(92vh - 3rem);
   border-radius: 8px;
   overflow: hidden;
   background: transparent;
@@ -3120,11 +3178,8 @@ body::after {
 .lb-film-img,
 .lb-film-img--fit {
   display: block;
-  /* height:auto preserves the image's natural aspect ratio.
-     width:100% ensures it fills the column; max-height matches the wrap cap. */
   width: 100%;
-  height: auto;
-  max-height: 70vh;
+  height: 100%;
   object-fit: contain;
   border-radius: 8px;
   opacity: 0;

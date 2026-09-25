@@ -2085,7 +2085,7 @@ body * {
 .pfz-mobile-swipe-pill {
   all: unset;
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20rem);
   left: 0;
   right: 0;
   margin-left: auto;
@@ -2124,10 +2124,13 @@ body * {
 }
 
 @keyframes pfzSwipeUpBounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate3d(0, 2px, 0);
     opacity: 0.6;
   }
+
   50% {
     transform: translate3d(0, -4px, 0);
     opacity: 1;
@@ -2172,6 +2175,7 @@ body::after {
 }
 
 @media (max-width: 768px) {
+
   body::before,
   body::after {
     display: none !important;

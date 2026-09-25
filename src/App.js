@@ -2495,16 +2495,16 @@ export default function App() {
           <motion.div
             className="pfz-dome-wrap"
             initial={{ opacity: 0, scale: 1.2 }}
-            animate={activeZone === 'portfolio' ? { opacity: 1, scale: 1.2 } : { opacity: 0, scale: 1.2 }}
+            animate={activeZone === 'portfolio' ? { opacity: 1, scale: 1.5 } : { opacity: 0, scale: 1.2 }}
             transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <DomeGallery
               active={activeZone === 'portfolio'}
               images={domeImages}
-              fit={isMobile ? 0.85 : 1.2}
+              fit={isMobile ? 1.2 : 1.2}
               minRadius={isMobile ? 500 : 1200}
               maxRadius={2000}
-              segments={isMobile ? 18 : 26}
+              segments={isMobile ? 20 : 26}
               grayscale={false}
               overlayBlurColor="#0c0c0c"
               imageBorderRadius="10px"

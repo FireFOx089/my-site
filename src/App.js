@@ -570,7 +570,7 @@ function ScrollIndicator({ visible }) {
                   <path d="M10 21v4M6 25h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                 </svg>
               </motion.div>
-              <span className="scroll-text">TAP</span>
+              <span className="scroll-text">TAP OR SWIPE</span>
             </>
           ) : (
             <>
@@ -1211,12 +1211,20 @@ function FinaleParticles({ active }) {
   const canvasRef = useRef(); const rafRef = useRef();
   const activeRef = useRef(active);
   const stateRef = useRef({ particles: [], W: 0, H: 0, opacity: 0 });
-  useEffect(() => { activeRef.current = active; }, [active]);
+  const drawRef = useRef();
+
+  useEffect(() => {
+    activeRef.current = active;
+    if (active && !rafRef.current && drawRef.current) {
+      rafRef.current = requestAnimationFrame(drawRef.current);
+    }
+  }, [active]);
 
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const spawn = (W, H) => Array.from({ length: FINALE_COUNT }, () => ({
+    const count = isMobile ? 30 : FINALE_COUNT;
+    const spawn = (W, H) => Array.from({ length: count }, () => ({
       x: Math.random() * W, y: Math.random() * H,
       r: 0.9 + Math.random() * 1.4,
       vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.10,
@@ -1231,8 +1239,15 @@ function FinaleParticles({ active }) {
     resize(); window.addEventListener('resize', resize);
     const draw = () => {
       const s = stateRef.current;
-      s.opacity += ((activeRef.current ? 1 : 0) - s.opacity) * 0.04;
-      if (s.opacity < 0.005) { rafRef.current = requestAnimationFrame(draw); return; }
+      s.opacity += ((activeRef.current ? 1 : 0) - s.opacity) * 0.05;
+      if (s.opacity < 0.005) {
+        if (!activeRef.current) {
+          s.opacity = 0;
+          ctx.clearRect(0, 0, s.W, s.H);
+          rafRef.current = null;
+          return; // Completely stop RAF loop when inactive and invisible!
+        }
+      }
       ctx.clearRect(0, 0, s.W, s.H);
       const { particles: pts, W, H, opacity } = s;
       const cols = Math.ceil(W / CELL_SIZE) + 1, rows = Math.ceil(H / CELL_SIZE) + 1;
@@ -1270,8 +1285,14 @@ function FinaleParticles({ active }) {
       }
       rafRef.current = requestAnimationFrame(draw);
     };
-    draw();
-    return () => { cancelAnimationFrame(rafRef.current); window.removeEventListener('resize', resize); };
+    drawRef.current = draw;
+    if (activeRef.current) {
+      rafRef.current = requestAnimationFrame(draw);
+    }
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
   return <canvas ref={canvasRef} className="finale-particles-canvas" aria-hidden="true" />;
@@ -1916,10 +1937,18 @@ export default function App() {
   const domeImages = useMemo(() => {
     return (portfolioItems || [])
       .filter((item) => item && item.img)
-      .map((item) => ({
-        src: item.img,
-        alt: item.label || 'Portfolio Item',
-      }));
+      .map((item) => {
+        let src = item.img;
+        if (isMobile && typeof src === 'string' && src.includes('cloudinary.com')) {
+          src = src.replace(/\/w_\d+([,/])/, '/w_360,q_auto:low$1');
+        } else if (typeof src === 'string' && src.includes('cloudinary.com')) {
+          src = src.replace(/\/w_\d+([,/])/, '/w_600,q_auto$1');
+        }
+        return {
+          src,
+          alt: item.label || 'Portfolio Item',
+        };
+      });
   }, [portfolioItems]);
 
   const [activeZone, setActiveZone] = useState('hero');
@@ -2470,11 +2499,12 @@ export default function App() {
             transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <DomeGallery
+              active={activeZone === 'portfolio'}
               images={domeImages}
               fit={isMobile ? 0.85 : 1.2}
               minRadius={isMobile ? 500 : 1200}
               maxRadius={2000}
-              segments={26}
+              segments={isMobile ? 18 : 26}
               grayscale={false}
               overlayBlurColor="#0c0c0c"
               imageBorderRadius="10px"

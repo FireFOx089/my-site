@@ -85,7 +85,8 @@ export default function DomeGallery({
   imageBorderRadius = '30px',
   openedImageBorderRadius = '30px',
   grayscale = true,
-  autoRotateSpeed = 0.012   // degrees per frame (~60fps → ~50s per full rotation)
+  autoRotateSpeed = 0.012,   // degrees per frame (~60fps → ~50s per full rotation)
+  active = true
 }) {
   const rootRef = useRef(null);
   const mainRef = useRef(null);
@@ -172,14 +173,15 @@ export default function DomeGallery({
 
   // ── Auto-rotate: slowly spin the dome when the user is idle ──
   useEffect(() => {
-    if (!autoRotateSpeed) return;
+    if (!autoRotateSpeed || !active) return;
     let idleTimer = null;
     const IDLE_DELAY_MS = 1800; // wait this long after drag ends before resuming
     const startAutoRotate = () => {
       if (autoRotateRAF.current) return;
       const tick = () => {
-        // Pause if user is dragging or inertia is running
+        // Pause if inactive, or user is dragging or inertia is running
         if (
+          !active ||
           draggingRef.current ||
           inertiaRAF.current
         ) {
@@ -220,7 +222,14 @@ export default function DomeGallery({
       main?.removeEventListener('pointerup', onDragEnd);
       main?.removeEventListener('pointercancel', onDragEnd);
     };
-  }, [autoRotateSpeed]);
+  }, [autoRotateSpeed, active]);
+
+  useEffect(() => {
+    if (!active && inertiaRAF.current) {
+      cancelAnimationFrame(inertiaRAF.current);
+      inertiaRAF.current = null;
+    }
+  }, [active]);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {

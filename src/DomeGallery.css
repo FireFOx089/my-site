@@ -67,6 +67,12 @@ main.sphere-main {
   backdrop-filter: blur(3px);
 }
 
+@media (max-width: 768px) {
+  .overlay--blur {
+    display: none !important;
+  }
+}
+
 .item {
   width: calc(var(--item-width) * var(--item-size-x));
   height: calc(var(--item-height) * var(--item-size-y));

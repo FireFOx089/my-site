@@ -2086,31 +2086,32 @@ body * {
   all: unset;
   position: absolute;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
   z-index: 45;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
-  padding: 0.55rem 1.4rem 0.65rem;
-  background: rgba(18, 18, 20, 0.78);
+  padding: 0.6rem 1.6rem 0.65rem;
+  background: rgba(20, 20, 24, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   cursor: pointer;
   pointer-events: auto;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.3s var(--ease-out-expo), border-color 0.3s var(--ease-out-expo), transform 0.2s ease;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
 .pfz-mobile-swipe-pill:active {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.45);
-  transform: translateX(-50%) scale(0.95);
 }
 
 .pfz-swipe-icon-wrap {
@@ -2119,15 +2120,16 @@ body * {
   justify-content: center;
   color: rgba(255, 255, 255, 0.95);
   animation: pfzSwipeUpBounce 1.8s ease-in-out infinite;
+  will-change: transform;
 }
 
 @keyframes pfzSwipeUpBounce {
   0%, 100% {
-    transform: translateY(2px);
+    transform: translate3d(0, 2px, 0);
     opacity: 0.6;
   }
   50% {
-    transform: translateY(-4px);
+    transform: translate3d(0, -4px, 0);
     opacity: 1;
   }
 }
@@ -2137,9 +2139,10 @@ body * {
   font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.28em;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
   line-height: 1;
+  white-space: nowrap;
 }
 
 
@@ -2166,6 +2169,13 @@ body::after {
   background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.018) 0px, transparent 1px, transparent 2px);
   pointer-events: none;
   z-index: 101;
+}
+
+@media (max-width: 768px) {
+  body::before,
+  body::after {
+    display: none !important;
+  }
 }
 
 :focus-visible {

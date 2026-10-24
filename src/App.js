@@ -2049,8 +2049,7 @@ export default function App() {
   // Mobile: gesture-based section navigation.
   // - Tap to advance on pages 1, 2, 3 (Hero, About, Skills).
   // - On Page 4 (Portfolio / Dome): dragging horizontally rotates the 3D gallery
-  //   without accidental page jumps; swiping UP smoothly advances to Page 5 (Contact),
-  //   and a dedicated "SWIPE UP" floating pill at the bottom gives a clear visual + tap target.
+  //   without accidental page jumps; swiping UP smoothly advances to Page 5 (Contact).
   // - Swiping DOWN on any section goes back to the previous section.
   const mobileSectionRef = useRef(mobileSection);
   useEffect(() => {
@@ -2059,7 +2058,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isMobile) return;
-    const EXCLUDE = '.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost, .pfz-mobile-swipe-pill';
+    const EXCLUDE = '.nav-dots, .overlay-page, .overlay-close, button, a, input, textarea, .finale-btn-primary, .finale-btn-ghost';
     let start = null;
 
     const onTouchStart = (e) => {
@@ -2107,7 +2106,7 @@ export default function App() {
         const currentSection = MOBILE_SECTIONS[mobileSectionRef.current];
         // On portfolio (page 4), touches inside the dome are for interacting with the 3D gallery,
         // so we don't accidentally navigate away on a simple touch.
-        // Users advance via swipe up, or tapping the dedicated floating "SWIPE UP" pill.
+        // Users advance via vertical swipe or nav dots.
         if (currentSection === 'portfolio' && inDome) {
           return;
         }
@@ -2544,25 +2543,6 @@ export default function App() {
               )}
             </motion.button>
           </div>
-
-          {/* Mobile navigation visual indicator: SWIPE UP */}
-          {isMobile && (
-            <motion.button
-              className="pfz-mobile-swipe-pill"
-              initial={{ opacity: 0, y: 14 }}
-              animate={activeZone === 'portfolio' ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-              transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => setMobileSection(prev => Math.min(prev + 1, MOBILE_SECTIONS.length - 1))}
-              aria-label="Swipe up or tap to continue to Contact"
-            >
-              <div className="pfz-swipe-icon-wrap">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="pfz-swipe-arrow">
-                  <path d="M18 15l-6-6-6 6" />
-                </svg>
-              </div>
-              <span className="pfz-swipe-text">SWIPE UP</span>
-            </motion.button>
-          )}
         </div>
       </div>
 
